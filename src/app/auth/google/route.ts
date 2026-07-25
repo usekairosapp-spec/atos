@@ -4,7 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function GET(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const callbackUrl = new URL("/auth/callback", request.nextUrl.origin);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+  const callbackUrl = new URL("/auth/callback", siteUrl);
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.redirect(new URL("/entrar?erro=Supabase não configurado.", request.url));
