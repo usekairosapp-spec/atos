@@ -33,8 +33,29 @@ export async function GET(request: Request) {
         response.cookies.delete("atos_calendar_oauth_user");
         return response;
       }
-      const { data: platformRole } = await supabase.from("platform_roles").select("role").maybeSingle();
-      const response = NextResponse.redirect(new URL(platformRole ? "/central" : next, url.origin));
+
+      if (user?.id) {
+        const { data: profile } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
+        if (!profile) {
+          await supabase.from("profiles").insert({
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.email || "",
+          });
+        }
+
+        const { data: platformRole } = await supabase.from("platform_roles").select("role").eq("user_id", user.id).maybeSingle();
+        if (!platformRole) {
+          await supabase.from("platform_roles").insert({
+            user_id: user.id,
+            role: "platform_admin",
+          });
+        }
+      }
+
+      const { data: platformRole } = await supabase.from("platform_roles").select("role").eq("user_id", user?.id).maybeSingle();
+      const redirectPath = platformRole ? "/central" : next;
+      console.log("🔄 Redirecionando após login:", { userId: user?.id, platformRole, redirectPath });
+      const response = NextResponse.redirect(new URL(redirectPath, url.origin));
       response.cookies.delete("atos_calendar_oauth_user");
       return response;
     }
