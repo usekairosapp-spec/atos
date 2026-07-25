@@ -29,6 +29,9 @@ export async function GET(request: NextRequest) {
     provider: "google",
     options: {
       redirectTo: callbackUrl.toString(),
+      queryParams: {
+        prompt: "select_account",
+      },
     },
   });
 
