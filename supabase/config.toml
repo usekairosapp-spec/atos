@@ -13,8 +13,19 @@ major_version = 17
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+site_url = "https://atos-agenda.netlify.app"
+additional_redirect_urls = [
+  "https://atos-agenda.netlify.app/auth/callback",
+  "http://localhost:3000/auth/callback",
+]
 jwt_expiry = 3600
 enable_signup = true
 
+[auth.email]
+enable_confirmations = false
+max_frequency = "1s"
+otp_length = 6
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
