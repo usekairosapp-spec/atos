@@ -5,6 +5,7 @@ import { AuthMessage } from "@/shared/components/auth-message";
 import { AtosBrand } from "@/shared/components/atos-brand";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
 import { GoogleLoginButton } from "@/shared/components/google-login-button";
+import { InstallPwa } from "@/shared/components/install-pwa";
 
 type LoginPageProps = { searchParams: Promise<{ erro?: string; sucesso?: string }> };
 
@@ -29,6 +30,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <AuthMessage {...message} />
 
           <GoogleLoginButton />
+
+          <InstallPwa />
 
           <details className="mt-6 rounded-xl border border-[#e8e4ee] p-4">
             <summary className="cursor-pointer text-center text-sm font-semibold text-[#6f6b7d]">Entrar com e-mail e senha</summary>
