@@ -42,18 +42,10 @@ export async function GET(request: Request) {
             full_name: user.user_metadata?.full_name || user.email || "",
           });
         }
-
-        const { data: platformRole } = await supabase.from("platform_roles").select("role").eq("user_id", user.id).maybeSingle();
-        if (!platformRole) {
-          await supabase.from("platform_roles").insert({
-            user_id: user.id,
-            role: "platform_admin",
-          });
-        }
       }
 
       const { data: platformRole } = await supabase.from("platform_roles").select("role").eq("user_id", user?.id).maybeSingle();
-      const response = NextResponse.redirect(new URL(platformRole ? "/central" : next, url.origin));
+      const response = NextResponse.redirect(new URL(platformRole ? "/central" : "/painel", url.origin));
       response.cookies.delete("atos_calendar_oauth_user");
       return response;
     }
