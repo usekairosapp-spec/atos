@@ -5,6 +5,7 @@ import { AuthMessage } from "@/shared/components/auth-message";
 import { AtosBrand } from "@/shared/components/atos-brand";
 import { InstallPwa } from "@/shared/components/install-pwa";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
+import { GoogleLoginButton } from "@/shared/components/google-login-button";
 
 type LoginPageProps = { searchParams: Promise<{ erro?: string; sucesso?: string }> };
 
@@ -28,7 +29,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="mt-2 text-[var(--muted)]">Entre para acessar suas escalas.</p>
           <AuthMessage {...message} />
 
-          <Link className="mt-8 flex min-h-14 w-full items-center justify-center rounded-xl bg-[#6827d8] px-5 font-semibold text-white shadow-lg hover:bg-[#5720bd]" href="/auth/google">Continuar com Google</Link>
+          <GoogleLoginButton />
 
           <details className="mt-6 rounded-xl border border-[#e8e4ee] p-4">
             <summary className="cursor-pointer text-center text-sm font-semibold text-[#6f6b7d]">Entrar com e-mail e senha</summary>
