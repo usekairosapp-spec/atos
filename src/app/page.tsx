@@ -1,10 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { ArrowRight, CalendarCheck2, ShieldCheck } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { AtosBrand } from "@/shared/components/atos-brand";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: platformRole } = await supabase.from("platform_roles").select("role").maybeSingle();
+    redirect(platformRole ? "/central" : "/painel");
+  }
+
   return (
     <main className="min-h-screen bg-[#0b0912] px-4 py-4 text-white sm:px-6 sm:py-6">
       <section className="relative mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl flex-col justify-between overflow-hidden rounded-[2.25rem] border border-white/10 bg-[radial-gradient(circle_at_15%_0%,#7040c8_0%,#21163d_32%,#0b0912_72%)] p-6 shadow-2xl sm:min-h-[calc(100vh-3rem)] sm:p-10 lg:p-14">

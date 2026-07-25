@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, recoverySchema, signUpSchema } from "@/features/auth/auth.schemas";
 
@@ -61,5 +62,8 @@ export async function updatePassword(formData: FormData) {
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete("appescala_church_id");
+  cookieStore.delete("atos_calendar_oauth_user");
   redirect("/entrar");
 }
