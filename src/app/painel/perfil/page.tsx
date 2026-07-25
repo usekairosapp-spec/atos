@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { LogOut } from "lucide-react";
+import { logout } from "@/features/auth/actions";
 import { getViewerContext } from "@/features/auth/viewer";
 import { AvatarPicker } from "@/features/profile/components/avatar-picker";
 import { updateProfile } from "@/features/profile/actions";
@@ -28,6 +30,11 @@ export default async function ProfilePage({ searchParams }: PageProps) {
         <button className="mt-7 min-h-13 rounded-xl bg-[#6827d8] px-6 font-semibold text-white" type="submit">Salvar perfil</button>
       </form>
       <InstallPwa />
+      <form action={logout} className="mt-6">
+        <button className="flex min-h-13 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 font-semibold text-red-700 transition hover:bg-red-100" type="submit">
+          <LogOut size={19} /> Sair da conta
+        </button>
+      </form>
     </main>
   );
 }
