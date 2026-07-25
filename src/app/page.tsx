@@ -7,11 +7,16 @@ import { AtosBrand } from "@/shared/components/atos-brand";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
 
 export default async function LandingPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    const { data: platformRole } = await supabase.from("platform_roles").select("role").maybeSingle();
-    redirect(platformRole ? "/central" : "/painel");
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: platformRole } = await supabase.from("platform_roles").select("role").maybeSingle();
+      redirect(platformRole ? "/central" : "/painel");
+    }
+  } catch (error) {
+    // Se falhar ao conectar com Supabase, deixa a landing page carregar normalmente
+    console.error("Erro ao verificar autenticação na landing page:", error);
   }
 
   return (
