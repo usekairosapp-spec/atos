@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Eye, Mail } from "lucide-react";
-import { login, signInWithGoogle } from "@/features/auth/actions";
+import { login } from "@/features/auth/actions";
 import { AuthMessage } from "@/shared/components/auth-message";
 import { AtosBrand } from "@/shared/components/atos-brand";
 import { InstallPwa } from "@/shared/components/install-pwa";
@@ -28,9 +28,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="mt-2 text-[var(--muted)]">Entre para acessar suas escalas.</p>
           <AuthMessage {...message} />
 
-          <form action={signInWithGoogle}>
-            <button className="mt-8 min-h-14 w-full rounded-xl bg-[#6827d8] px-5 font-semibold text-white shadow-lg hover:bg-[#5720bd]" type="submit">Continuar com Google</button>
-          </form>
+          <Link className="mt-8 flex min-h-14 w-full items-center justify-center rounded-xl bg-[#6827d8] px-5 font-semibold text-white shadow-lg hover:bg-[#5720bd]" href="/auth/google">Continuar com Google</Link>
 
           <details className="mt-6 rounded-xl border border-[#e8e4ee] p-4">
             <summary className="cursor-pointer text-center text-sm font-semibold text-[#6f6b7d]">Entrar com e-mail e senha</summary>

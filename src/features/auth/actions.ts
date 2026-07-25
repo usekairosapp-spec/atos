@@ -19,17 +19,6 @@ export async function login(formData: FormData) {
   redirect(platformRole ? "/central" : "/painel");
 }
 
-export async function signInWithGoogle() {
-  const supabase = await createClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${siteUrl}/auth/callback` },
-  });
-  if (error || !data.url) redirectWithMessage("/entrar", "erro", "Não foi possível iniciar o login com Google.");
-  redirect(data.url);
-}
-
 export async function signUp(formData: FormData) {
   const parsed = signUpSchema.safeParse({
     fullName: formData.get("fullName"),
