@@ -38,6 +38,18 @@ export async function GET(request: Request) {
       response.cookies.delete("atos_calendar_oauth_user");
       return response;
     }
+    const hasCodeVerifier = cookieStore.getAll().some(({ name }) => name.includes("code-verifier"));
+    console.error("Falha ao confirmar callback OAuth", {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      hasCodeVerifier,
+      calendarFlow,
+    });
+    const detail = error.message.toLowerCase().includes("code verifier")
+      ? "O navegador não preservou o cookie de segurança do login. Feche outras abas do ATOS e tente novamente."
+      : `O Google retornou: ${error.message}`;
+    return NextResponse.redirect(new URL(`/entrar?erro=${encodeURIComponent(detail)}`, url.origin));
   }
 
   return NextResponse.redirect(new URL("/entrar?erro=Não foi possível confirmar sua sessão.", url.origin));
