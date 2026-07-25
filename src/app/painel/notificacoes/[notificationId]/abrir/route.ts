@@ -9,7 +9,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ noti
   if (!user) return NextResponse.redirect(new URL("/entrar", request.url));
   const { data: notification } = await supabase.from("notifications").select("href, kind").eq("id", notificationId).eq("user_id", user.id).eq("church_id", viewer?.currentChurch?.id ?? "00000000-0000-0000-0000-000000000000").maybeSingle();
   if (!notification) return NextResponse.redirect(new URL("/painel/notificacoes", request.url));
-  await supabase.rpc("mark_notification_read", { target_notification_id: notificationId });
+  await Promise.all([
+    supabase.rpc("mark_notification_read", { target_notification_id: notificationId }),
+    supabase.from("notifications").delete().eq("id", notificationId),
+  ]);
   const personalKinds = new Set(["schedule_published", "schedule_added", "schedule_updated", "swap_accepted", "swap_rejected"]);
   const safeHref = notification.href?.startsWith("/painel/") ? notification.href : "/painel/notificacoes";
   const destination = personalKinds.has(notification.kind) && /^\/painel\/escalas\/[^/?]+$/.test(safeHref)
