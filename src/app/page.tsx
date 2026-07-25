@@ -30,6 +30,11 @@ export default function LandingPage() {
           <Link className="min-h-12 rounded-xl px-6 py-3 text-center font-medium text-violet-100 hover:bg-white/5" href="/entrar">
             Já tenho uma conta
           </Link>
+          <div className="flex justify-center gap-5 text-xs text-violet-200">
+            <Link className="underline-offset-4 hover:underline" href="/privacidade">Privacidade</Link>
+            <Link className="underline-offset-4 hover:underline" href="/termos">Termos de Uso</Link>
+            <a className="underline-offset-4 hover:underline" href="mailto:usekairosapp@gmail.com">Suporte</a>
+          </div>
         </div>
       </section>
     </main>
