@@ -1,23 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 
 export function GoogleLoginButton() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     setIsLoading(true);
+    window.location.href = "/auth/google";
   };
 
   return (
-    <Link
+    <button
       className="mt-8 flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#6827d8] px-5 font-semibold text-white shadow-lg hover:bg-[#5720bd] disabled:cursor-wait disabled:opacity-70"
-      href="/auth/google"
       onClick={handleClick}
+      disabled={isLoading}
       aria-disabled={isLoading}
-      style={{ pointerEvents: isLoading ? "none" : "auto", opacity: isLoading ? 0.7 : 1 }}
+      type="button"
     >
       {isLoading ? (
         <>
@@ -27,6 +28,6 @@ export function GoogleLoginButton() {
       ) : (
         "Continuar com Google"
       )}
-    </Link>
+    </button>
   );
 }
