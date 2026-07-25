@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Share } from "lucide-react";
+import { Download, Share, Smartphone } from "lucide-react";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -12,6 +12,7 @@ export function InstallPwa() {
   const [prompt, setPrompt] = useState<InstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
     const initialize = window.setTimeout(() => {
@@ -19,6 +20,7 @@ export function InstallPwa() {
         || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
       setInstalled(standalone);
       setIsIos(/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone);
+      setIsAndroid(/android/i.test(navigator.userAgent) && !standalone);
     }, 0);
 
     const capture = (event: Event) => {
@@ -52,12 +54,36 @@ export function InstallPwa() {
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]"><Download size={22} /></span>
         <div>
           <h2 className="text-lg font-bold">Aplicativo ATOS</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">{installed ? "O ATOS já está instalado neste dispositivo." : "Instale para abrir em tela cheia e acessar rapidamente pela tela inicial."}</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">{installed ? "O ATOS já está instalado neste dispositivo." : "Instale gratuitamente para acessar suas escalas direto pela tela inicial."}</p>
         </div>
       </div>
-      {prompt && !installed ? <button className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 font-semibold text-white" onClick={install} type="button"><Download size={18} /> Instalar aplicativo</button> : null}
-      {isIos && !installed ? <p className="mt-5 flex items-start gap-2 rounded-xl bg-[var(--surface-soft)] p-4 text-sm text-[var(--muted)]"><Share className="mt-0.5 shrink-0 text-[var(--brand)]" size={18} />No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.</p> : null}
-      {!prompt && !isIos && !installed ? <p className="mt-4 text-sm text-[var(--muted)]">A opção de instalação aparecerá quando o navegador confirmar os requisitos do aplicativo.</p> : null}
+      {!installed ? (
+        <>
+          <div className="mt-5 grid gap-3">
+            <div className={`flex items-start gap-3 rounded-xl border p-4 ${isAndroid ? "border-[var(--brand)] bg-[var(--brand-soft)]" : "border-[var(--border)] bg-[var(--surface-soft)]"}`}>
+              <Smartphone className="mt-0.5 shrink-0 text-[var(--brand)]" size={19} />
+              <div>
+                <p className="text-sm font-bold">Android</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">Abra pelo Google Chrome e toque no botão “Instalar no Android”. A instalação é automática.</p>
+              </div>
+            </div>
+            <div className={`flex items-start gap-3 rounded-xl border p-4 ${isIos ? "border-[var(--brand)] bg-[var(--brand-soft)]" : "border-[var(--border)] bg-[var(--surface-soft)]"}`}>
+              <Share className="mt-0.5 shrink-0 text-[var(--brand)]" size={19} />
+              <div>
+                <p className="text-sm font-bold">iPhone ou iPad</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">Abra no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.</p>
+              </div>
+            </div>
+          </div>
+          {prompt ? (
+            <button className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 font-semibold text-white" onClick={install} type="button">
+              <Download size={18} /> Instalar no Android
+            </button>
+          ) : isAndroid ? (
+            <p className="mt-3 text-center text-xs text-[var(--muted)]">Se o botão não aparecer, abra o menu ⋮ do Chrome e toque em “Instalar aplicativo”.</p>
+          ) : null}
+        </>
+      ) : null}
     </section>
   );
 }
