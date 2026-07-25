@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   },
   description: "Agenda de Times, Organização e Serviço.",
   applicationName: "ATOS",
+  verification: {
+    google: "lCGIyVkbvIuiI5itTw4j-P4XxyD1JwVosJETE2YjOQo",
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "ATOS" },
   formatDetection: { telephone: false },
