@@ -21,9 +21,19 @@ export default async function PlatformCentralPage({ searchParams }: PageProps) {
     searchParams,
   ]);
   const platformUserIds = new Set(platformRoles?.map((item) => item.user_id) ?? []);
-  const eligibleUsers = profiles?.filter((profile) => !platformUserIds.has(profile.id)) ?? [];
   const activeMemberships = memberships?.filter((item) => item.status === "active") ?? [];
   const pendingMemberships = memberships?.filter((item) => item.status === "pending") ?? [];
+
+  // Filtrar apenas usuários que:
+  // 1. Não são platform admins
+  // 2. Têm pelo menos uma membership ativa com uma chiesa ativa
+  const activeChurchIds = new Set(churches?.filter((c) => c.status === "active").map((c) => c.id) ?? []);
+  const usersWithActiveMemberships = new Set(
+    activeMemberships
+      .filter((item) => activeChurchIds.has(item.church_id))
+      .map((item) => item.user_id)
+  );
+  const eligibleUsers = profiles?.filter((profile) => !platformUserIds.has(profile.id) && usersWithActiveMemberships.has(profile.id)) ?? [];
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
