@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://atos-agenda.netlify.app/sitemap.xml
