@@ -4,7 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function GET(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+  // Em desenvolvimento, usa a origem atual (localhost). Em produção, usa a URL canônica.
+  const siteUrl = process.env.NODE_ENV === "development"
+    ? request.nextUrl.origin
+    : (process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin);
   const callbackUrl = new URL("/auth/callback", siteUrl);
 
   if (!supabaseUrl || !supabaseKey) {
@@ -37,7 +40,13 @@ export async function GET(request: NextRequest) {
   });
 
   if (error || !data.url) {
-    return NextResponse.redirect(new URL("/entrar?erro=Não foi possível iniciar o login com Google.", request.url));
+    console.error("🔴 OAuth Error:", {
+      errorMessage: error?.message,
+      errorCode: error?.status,
+      hasUrl: !!data?.url,
+      callbackUrl: callbackUrl.toString(),
+    });
+    return NextResponse.redirect(new URL(`/entrar?erro=${encodeURIComponent(error?.message || "Não foi possível iniciar o login com Google.")}`, request.url));
   }
 
   const response = NextResponse.redirect(data.url);
