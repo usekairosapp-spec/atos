@@ -5,8 +5,8 @@ import { Bell, Building2, LayoutDashboard, UserRoundCheck } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const navigation = [
-  { href: "/central", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/central/igrejas", label: "Igrejas", icon: Building2 },
+  { href: "/central", label: "Visão geral", icon: LayoutDashboard, badge: null },
+  { href: "/central/igrejas", label: "Igrejas", icon: Building2, badge: null },
   { href: "/central/solicitacoes", label: "Solicitações", icon: UserRoundCheck, badge: "requests" },
   { href: "/central/notificacoes", label: "Notificações", icon: Bell, badge: "notifications" },
 ] as const;
