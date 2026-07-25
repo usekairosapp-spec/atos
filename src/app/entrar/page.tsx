@@ -3,7 +3,6 @@ import { Eye, Mail } from "lucide-react";
 import { login } from "@/features/auth/actions";
 import { AuthMessage } from "@/shared/components/auth-message";
 import { AtosBrand } from "@/shared/components/atos-brand";
-import { InstallPwa } from "@/shared/components/install-pwa";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
 import { GoogleLoginButton } from "@/shared/components/google-login-button";
 
@@ -52,7 +51,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </form>
           </details>
           <p className="mt-8 text-center text-[#6f6b7d]">Ainda não tem conta? <Link className="font-semibold text-[#6827d8]" href="/cadastro">Criar conta</Link></p>
-          <InstallPwa />
           <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-[var(--muted)]">
             <Link className="hover:text-[var(--brand)]" href="/privacidade">Privacidade</Link>
             <Link className="hover:text-[var(--brand)]" href="/termos">Termos de Uso</Link>
