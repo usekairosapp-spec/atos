@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Eye, Mail } from "lucide-react";
 import { login } from "@/features/auth/actions";
-import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
 import { AtosBrand } from "@/shared/components/atos-brand";
 import { InstallPwa } from "@/shared/components/install-pwa";
@@ -11,12 +9,6 @@ import { ThemeToggle } from "@/shared/components/theme-toggle";
 type LoginPageProps = { searchParams: Promise<{ erro?: string; sucesso?: string }> };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    const { data: platformRole } = await supabase.from("platform_roles").select("role").maybeSingle();
-    redirect(platformRole ? "/central" : "/painel");
-  }
   const message = await searchParams;
   return (
     <main className="grid min-h-screen bg-[var(--background)] lg:grid-cols-[1fr_1.15fr]">
