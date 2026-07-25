@@ -1,0 +1,153 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+
+const newScheduleSchema = z.object({
+  departmentId: z.string().uuid(),
+  title: z.string().trim().min(2, "Informe o nome do evento.").max(120),
+  date: z.string().min(1, "Informe a data."),
+  startTime: z.string().min(1, "Informe o início."),
+  endTime: z.string().min(1, "Informe o término."),
+  location: z.string().trim().max(160).optional().default(""),
+  notes: z.string().trim().max(1000).optional().default(""),
+});
+
+function localDateTimeToIso(value: string) {
+  const date = new Date(`${value}:00-03:00`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+export async function createSchedule(formData: FormData) {
+  const parsed = newScheduleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect(`/painel/escalas/nova?erro=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Dados inválidos.")}`);
+  const startsAt = localDateTimeToIso(`${parsed.data.date}T${parsed.data.startTime}`);
+  const endsAt = localDateTimeToIso(`${parsed.data.date}T${parsed.data.endTime}`);
+  if (!startsAt || !endsAt) redirect("/painel/escalas/nova?erro=Data ou horário inválido.");
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_department_schedule", {
+    target_department_id: parsed.data.departmentId,
+    schedule_title: parsed.data.title,
+    schedule_starts_at: startsAt,
+    schedule_ends_at: endsAt,
+    schedule_location: parsed.data.location,
+    schedule_notes: parsed.data.notes,
+  });
+  if (error) redirect(`/painel/escalas/nova?erro=${encodeURIComponent(error.message)}`);
+  redirect(`/painel/escalas/${data}?sucesso=Escala criada como rascunho.`);
+}
+
+export async function addScheduleAssignment(formData: FormData) {
+  const parsed = z.object({ scheduleId: z.string().uuid(), positionId: z.string().uuid(), userId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?erro=Participante inválido.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_schedule_assignment", {
+    target_schedule_id: parsed.data.scheduleId,
+    target_position_id: parsed.data.positionId,
+    target_user_id: parsed.data.userId,
+  });
+  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.code === "23505" ? "Essa pessoa já está nessa função." : error.message)}`);
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
+  revalidatePath("/painel/escalas");
+}
+
+export async function addScheduleAssignments(formData: FormData) {
+  const scheduleId = z.string().uuid().safeParse(formData.get("scheduleId"));
+  const selections = formData.getAll("selection").map(String);
+  if (!scheduleId.success || !selections.length) redirect(`/painel/escalas/${scheduleId.success ? scheduleId.data : ""}?erro=Selecione pelo menos uma pessoa.`);
+  const parsedSelections = selections.map((value) => {
+    const [positionId, userId] = value.split("|");
+    return z.object({ positionId: z.string().uuid(), userId: z.string().uuid() }).safeParse({ positionId, userId });
+  });
+  if (parsedSelections.some((item) => !item.success)) redirect(`/painel/escalas/${scheduleId.data}?erro=Uma das seleções é inválida.`);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_schedule_assignments", {
+    target_schedule_id: scheduleId.data,
+    selections: parsedSelections.flatMap((selection) => selection.success ? [{ positionId: selection.data.positionId, userId: selection.data.userId }] : []),
+  });
+  if (error) redirect(`/painel/escalas/${scheduleId.data}?erro=${encodeURIComponent(error.code === "23505" ? "Uma das pessoas já está nessa função." : error.message)}`);
+  revalidatePath(`/painel/escalas/${scheduleId.data}`);
+  revalidatePath("/painel/escalas");
+  redirect(`/painel/escalas/${scheduleId.data}?sucesso=Equipe atualizada.`);
+}
+
+export async function publishSchedule(formData: FormData) {
+  const scheduleId = z.string().uuid().safeParse(formData.get("scheduleId"));
+  if (!scheduleId.success) redirect("/painel/escalas?erro=Escala inválida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("publish_department_schedule", { target_schedule_id: scheduleId.data });
+  if (error) redirect(`/painel/escalas/${scheduleId.data}?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/painel/escalas/${scheduleId.data}`);
+  revalidatePath("/painel/escalas");
+  redirect(`/painel/escalas/${scheduleId.data}?sucesso=Escala publicada com sucesso.`);
+}
+
+export async function confirmAssignment(formData: FormData) {
+  const parsed = z.object({ assignmentId: z.string().uuid(), scheduleId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?erro=Confirmação inválida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("confirm_schedule_assignment", { target_assignment_id: parsed.data.assignmentId });
+  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
+  redirect(`/painel/escalas/${parsed.data.scheduleId}/confirmado/${parsed.data.assignmentId}`);
+}
+
+export async function requestAssignmentSwap(formData: FormData) {
+  const parsed = z.object({ assignmentId: z.string().uuid(), scheduleId: z.string().uuid(), suggestedUserId: z.string().uuid(), reason: z.string().trim().max(500).optional() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?erro=Solicitação inválida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_assignment_swap", {
+    target_assignment_id: parsed.data.assignmentId,
+    target_suggested_user_id: parsed.data.suggestedUserId,
+    swap_reason: parsed.data.reason || null,
+  });
+  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.code === "23505" ? "Já existe uma solicitação de troca pendente." : error.message)}`);
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
+  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Solicitação de troca enviada ao líder.`);
+}
+
+export async function respondToPeerSwap(formData: FormData) {
+  const parsed = z.object({ requestId: z.string().uuid(), scheduleId: z.string().uuid(), decision: z.enum(["accept", "reject"]) }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?erro=Resposta inválida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("respond_to_peer_swap", { target_request_id: parsed.data.requestId, accept_request: parsed.data.decision === "accept" });
+  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`); revalidatePath("/painel/escalas");
+  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=${parsed.data.decision === "accept" ? "Troca aceita. Esta escala agora é sua." : "Troca recusada."}`);
+}
+
+export async function updateSchedule(formData: FormData) {
+  const parsed = z.object({ scheduleId: z.string().uuid(), title: z.string().trim().min(2).max(120), date: z.string().min(1), startTime: z.string().min(1), endTime: z.string().min(1), location: z.string().trim().max(160).optional().default(""), notes: z.string().trim().max(1000).optional().default("") }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?erro=Dados da escala inválidos.");
+  const startsAt = localDateTimeToIso(`${parsed.data.date}T${parsed.data.startTime}`);
+  const endsAt = localDateTimeToIso(`${parsed.data.date}T${parsed.data.endTime}`);
+  if (!startsAt || !endsAt) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=Data ou horário inválido.`);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_department_schedule", { target_schedule_id: parsed.data.scheduleId, schedule_title: parsed.data.title, schedule_starts_at: startsAt, schedule_ends_at: endsAt, schedule_location: parsed.data.location, schedule_notes: parsed.data.notes });
+  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`); revalidatePath("/painel/escalas");
+  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Escala atualizada.`);
+}
+
+export async function removeScheduleAssignment(formData: FormData) {
+  const parsed = z.object({ assignmentId: z.string().uuid(), scheduleId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?erro=Participante inválido.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remove_schedule_assignment", { target_assignment_id: parsed.data.assignmentId });
+  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`); revalidatePath("/painel/escalas");
+  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Pessoa removida da escala.`);
+}
+
+export async function deleteSchedule(formData: FormData) {
+  const scheduleId = z.string().uuid().safeParse(formData.get("scheduleId"));
+  if (!scheduleId.success) redirect("/painel/escalas?erro=Escala inválida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_department_schedule", { target_schedule_id: scheduleId.data });
+  if (error) redirect(`/painel/escalas/${scheduleId.data}?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath("/painel/escalas"); revalidatePath("/painel");
+  redirect("/painel/escalas?sucesso=Escala excluída.");
+}

@@ -1,0 +1,14 @@
+import { redirect } from "next/navigation";
+import { getViewerContext } from "@/features/auth/viewer";
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+
+export default async function DepartmentsPage() {
+  const viewer = await getViewerContext();
+  if (!viewer || viewer.role === "member") redirect("/painel?erro=Sem permissão para acessar setores.");
+  const supabase = await createClient();
+  if (!viewer.currentChurch) redirect("/painel?erro=Nenhuma igreja selecionada.");
+  const query = supabase.from("departments").select("id, name, church_id").eq("active", true).order("name");
+  const { data: departments } = viewer.role === "admin" ? await query.eq("church_id", viewer.currentChurch.id) : await query.in("id", viewer.departmentMemberships.filter((item) => item.role === "leader").map((item) => item.department_id));
+  return <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8"><p className="text-sm font-semibold uppercase tracking-[.15em] text-[#6827d8]">Equipes</p><h1 className="mt-2 text-3xl font-bold">{viewer.role === "admin" ? "Setores da igreja" : "Meus setores"}</h1><section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{departments?.map((department) => <Link className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md" href={`/painel/setores/${department.id}`} key={department.id}><h2 className="text-xl font-bold">{department.name}</h2><p className="mt-2 text-sm text-[#6f6b7d]">{viewer.role === "admin" ? "Consultar funções do setor" : "Gerenciar funções do seu setor"}</p></Link>)}</section></main>;
+}
