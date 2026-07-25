@@ -77,7 +77,7 @@ export function InstallPwa() {
           </div>
           {prompt ? (
             <button className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 font-semibold text-white" onClick={install} type="button">
-              <Download size={18} /> Instalar no Android
+              <Download size={18} /> Instalar
             </button>
           ) : isAndroid ? (
             <p className="mt-3 text-center text-xs text-[var(--muted)]">Se o botão não aparecer, abra o menu ⋮ do Chrome e toque em “Instalar aplicativo”.</p>
