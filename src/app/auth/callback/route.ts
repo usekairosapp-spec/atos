@@ -53,9 +53,7 @@ export async function GET(request: Request) {
       }
 
       const { data: platformRole } = await supabase.from("platform_roles").select("role").eq("user_id", user?.id).maybeSingle();
-      const redirectPath = platformRole ? "/central" : next;
-      console.log("🔄 Redirecionando após login:", { userId: user?.id, platformRole, redirectPath });
-      const response = NextResponse.redirect(new URL(redirectPath, url.origin));
+      const response = NextResponse.redirect(new URL(platformRole ? "/central" : next, url.origin));
       response.cookies.delete("atos_calendar_oauth_user");
       return response;
     }
