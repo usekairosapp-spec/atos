@@ -16,6 +16,8 @@ export async function login(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) redirectWithMessage("/entrar", "erro", "E-mail ou senha inválidos.");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirectWithMessage("/entrar", "erro", "Não foi possível confirmar sua sessão. Tente novamente.");
   const { data: platformRole } = await supabase.from("platform_roles").select("role").maybeSingle();
   redirect(platformRole ? "/central" : "/painel");
 }
