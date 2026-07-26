@@ -9,6 +9,11 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
   if (viewer.isPlatformAdmin) redirect("/central");
   const supabase = await createClient();
   const unreadQuery = supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null);
-  const { count: unreadCount } = viewer.currentChurch ? await unreadQuery.eq("church_id", viewer.currentChurch.id) : { count: 0 };
-  return <AppShell fullName={viewer.profile.fullName} avatarUrl={viewer.profile.avatarUrl} role={viewer.role} unreadCount={unreadCount ?? 0} churchName={viewer.currentChurch?.name ?? null} churchLogoUrl={viewer.churchBranding.logoUrl} primaryColor={viewer.churchBranding.primaryColor}>{children}</AppShell>;
+  const [{ count: unreadCount }, { count: unreadAnnouncementCount }] = viewer.currentChurch
+    ? await Promise.all([
+      unreadQuery.eq("church_id", viewer.currentChurch.id),
+      supabase.from("notifications").select("id", { count: "exact", head: true }).eq("church_id", viewer.currentChurch.id).eq("kind", "announcement").is("read_at", null),
+    ])
+    : [{ count: 0 }, { count: 0 }];
+  return <AppShell fullName={viewer.profile.fullName} avatarUrl={viewer.profile.avatarUrl} role={viewer.role} unreadCount={unreadCount ?? 0} unreadAnnouncementCount={unreadAnnouncementCount ?? 0} churchName={viewer.currentChurch?.name ?? null} churchLogoUrl={viewer.churchBranding.logoUrl} primaryColor={viewer.churchBranding.primaryColor}>{children}</AppShell>;
 }
