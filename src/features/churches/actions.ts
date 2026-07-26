@@ -21,12 +21,24 @@ export async function createChurch(formData: FormData) {
 }
 
 export async function assignChurchAdmin(formData: FormData) {
-  const parsed = z.object({ churchId: z.string().uuid(), userId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
-  if (!parsed.success) redirect("/central?erro=Responsável inválido.");
+  const userIds = formData.getAll("userId").map(String);
+  const churchId = z.string().uuid().safeParse(formData.get("churchId"));
+  if (!churchId.success || !userIds.length) redirect("/central?erro=Responsáveis inválidos.");
+
   const supabase = await createClient();
-  const { error } = await supabase.rpc("assign_church_admin", { target_church_id: parsed.data.churchId, target_user_id: parsed.data.userId });
-  if (error) redirect(`/central?erro=${encodeURIComponent(error.message)}`);
-  redirect("/central?sucesso=Administrador geral da igreja definido.");
+  const errors: string[] = [];
+
+  for (const userId of userIds) {
+    if (!z.string().uuid().safeParse(userId).success) {
+      errors.push("Um dos responsáveis é inválido.");
+      continue;
+    }
+    const { error } = await supabase.rpc("assign_church_admin", { target_church_id: churchId.data, target_user_id: userId });
+    if (error) errors.push(error.message);
+  }
+
+  if (errors.length) redirect(`/central?erro=${encodeURIComponent(errors[0])}`);
+  redirect("/central?sucesso=Responsáveis da igreja definidos.");
 }
 
 export async function deleteChurch(formData: FormData) {
