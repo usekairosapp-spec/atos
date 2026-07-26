@@ -29,8 +29,14 @@ export async function assignChurchAdmin(formData: FormData) {
 
   const supabase = await createClient();
 
-  // Remove todos os responsáveis antigos
-  await supabase.from("church_memberships").update({ role: "member" }).eq("church_id", churchId.data).eq("role", "church_admin");
+  // Busca todos os memberships da igreja para resetar
+  const { data: allMemberships } = await supabase.from("church_memberships").select("id, user_id").eq("church_id", churchId.data);
+
+  // Remove todos os responsáveis antigos (muda para member)
+  if (allMemberships && allMemberships.length > 0) {
+    const { error } = await supabase.from("church_memberships").update({ role: "member" }).eq("church_id", churchId.data).eq("role", "church_admin");
+    if (error) redirect(`/central?erro=${encodeURIComponent("Erro ao remover responsáveis antigos: " + error.message)}`);
+  }
 
   const errors: string[] = [];
 
@@ -41,13 +47,15 @@ export async function assignChurchAdmin(formData: FormData) {
       continue;
     }
     const { error } = await supabase.from("church_memberships").update({ role: "church_admin" }).eq("church_id", churchId.data).eq("user_id", userId);
-    if (error) errors.push(error.message);
+    if (error) {
+      errors.push(`Erro ao adicionar ${userId}: ${error.message}`);
+    }
   }
 
-  if (errors.length) redirect(`/central?erro=${encodeURIComponent(errors[0])}`);
+  if (errors.length > 0) redirect(`/central?erro=${encodeURIComponent(errors.join(" | "))}`);
 
-  revalidatePath("/central");
-  redirect("/central?sucesso=Responsáveis da igreja atualizados.");
+  revalidatePath("/central", "layout");
+  redirect("/central#igrejas?sucesso=Responsáveis da igreja atualizados com sucesso.");
 }
 
 export async function deleteChurch(formData: FormData) {
