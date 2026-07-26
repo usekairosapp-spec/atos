@@ -120,7 +120,9 @@ export async function removeDepartmentMember(formData: FormData) {
   if (error) redirect(`/painel/setores?erro=${encodeURIComponent(error.message)}`);
 
   revalidatePath("/painel/membros");
+  revalidatePath("/painel/membros", "layout");
   revalidatePath("/painel/setores");
   revalidatePath("/painel/escalas");
+  revalidatePath("/painel", "layout");
   redirect(`/painel/setores?sucesso=Pessoa removida do setor.`);
 }
