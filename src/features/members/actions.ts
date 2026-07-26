@@ -87,11 +87,19 @@ export async function removeChurchMember(formData: FormData) {
   const { data: removedAssignments, error } = await supabase.rpc("remove_church_member", {
     target_membership_id: membershipId.data,
   });
-  if (error) redirect(`/painel/membros?erro=${encodeURIComponent(error.message)}`);
+
+  console.log("Remove church member result:", { error, removedAssignments, membershipId: membershipId.data });
+
+  if (error) {
+    console.error("Erro ao remover membro da igreja:", error);
+    redirect(`/painel/membros?erro=ERRO: ${encodeURIComponent(error.message)}`);
+  }
 
   revalidatePath("/painel/membros");
+  revalidatePath("/painel/membros", "layout");
   revalidatePath("/painel/escalas");
   revalidatePath("/painel");
+  revalidatePath("/painel/setores");
   const count = Number(removedAssignments ?? 0);
   redirect(`/painel/membros?sucesso=${encodeURIComponent(count > 0 ? `Membro removido e ${count} participação(ões) futura(s) cancelada(s).` : "Membro removido da igreja e dos setores.")}`);
 }
