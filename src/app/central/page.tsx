@@ -47,7 +47,7 @@ export default async function PlatformCentralPage({ searchParams }: PageProps) {
         const churchUserIds = new Set(activeMemberships.filter((item) => item.church_id === church.id).map((item) => item.user_id));
         const churchEligibleUsers = eligibleUsers.filter((profile) => churchUserIds.has(profile.id));
         const adminMemberships = activeMemberships.filter((item) => item.church_id === church.id && item.role === "church_admin");
-        const admins = adminMemberships.map((membership) => churchEligibleUsers.find((profile) => profile.id === membership.user_id)).filter(Boolean);
+        const admins = adminMemberships.map((membership) => profiles?.find((profile) => profile.id === membership.user_id)).filter(Boolean);
         const memberCount = activeMemberships.filter((item) => item.church_id === church.id).length;
         const pendingCount = pendingMemberships.filter((item) => item.church_id === church.id).length;
         const logoUrl = church.logo_path ? supabase.storage.from("church-branding").getPublicUrl(church.logo_path).data.publicUrl : null;

@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -44,6 +45,8 @@ export async function assignChurchAdmin(formData: FormData) {
   }
 
   if (errors.length) redirect(`/central?erro=${encodeURIComponent(errors[0])}`);
+
+  revalidatePath("/central");
   redirect("/central?sucesso=Responsáveis da igreja atualizados.");
 }
 
