@@ -117,32 +117,24 @@ export async function removeDepartmentMember(formData: FormData) {
 
   const supabase = await createClient();
 
-  // Verifica se o membro existe
-  const { data: membership, error: fetchError } = await supabase
-    .from("department_memberships")
-    .select("id")
-    .eq("department_id", parsed.data.departmentId)
-    .eq("user_id", parsed.data.userId)
-    .maybeSingle();
-
-  if (fetchError) {
-    console.error("Erro ao buscar membro:", fetchError);
-    redirect(`/painel/setores?erro=${encodeURIComponent(fetchError.message)}`);
-  }
-
-  if (!membership) {
-    redirect("/painel/setores?erro=Membro não encontrado neste setor.");
-  }
-
-  // Delete por ID (contorna RLS melhor)
-  const { error: deleteError } = await supabase
+  // Tenta delete direto com dois filtros
+  const { error: deleteError, count } = await supabase
     .from("department_memberships")
     .delete()
-    .eq("id", membership.id);
+    .eq("department_id", parsed.data.departmentId)
+    .eq("user_id", parsed.data.userId);
+
+  // Log para debug
+  console.log("Delete result:", { deleteError, count, departmentId: parsed.data.departmentId, userId: parsed.data.userId });
 
   if (deleteError) {
     console.error("Erro ao deletar membro:", deleteError);
-    redirect(`/painel/setores?erro=${encodeURIComponent(deleteError.message)}`);
+    redirect(`/painel/setores?erro=ERRO: ${encodeURIComponent(deleteError.message)}`);
+  }
+
+  if (count === 0) {
+    console.warn("Nenhuma linha deletada - verificar RLS");
+    redirect(`/painel/setores?erro=Não foi possível remover. Verifique permissões.`);
   }
 
   revalidatePath("/painel/membros");
