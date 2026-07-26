@@ -14,7 +14,7 @@ export function GoogleLoginButton() {
 
   return (
     <button
-      className="mt-8 flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#6827d8] px-5 font-semibold text-white shadow-lg hover:bg-[#5720bd] disabled:cursor-wait disabled:opacity-70"
+      className="mt-8 flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#277ad8] px-5 font-semibold text-white shadow-lg hover:bg-[#206cbd] disabled:cursor-wait disabled:opacity-70"
       onClick={handleClick}
       disabled={isLoading}
       aria-disabled={isLoading}

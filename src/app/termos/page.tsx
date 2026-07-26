@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AtosBrand } from "@/shared/components/atos-brand";
+import { KairosBrand } from "@/shared/components/kairos-brand";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
-  description: "Termos de Uso do ATOS.",
+  description: "Termos de Uso do Kairos Escala.",
 };
 
 export default function TermsPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 text-[var(--foreground)] sm:px-8">
       <article className="mx-auto max-w-3xl rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm sm:p-10">
-        <Link href="/" aria-label="Voltar para o início"><AtosBrand /></Link>
+        <Link href="/" aria-label="Voltar para o início"><KairosBrand /></Link>
         <p className="mt-10 text-sm font-semibold uppercase tracking-[.15em] text-[var(--brand)]">Documentos legais</p>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Termos de Uso</h1>
         <p className="mt-3 text-sm text-[var(--muted)]">Última atualização: 25 de julho de 2026.</p>
@@ -19,12 +19,12 @@ export default function TermsPage() {
         <div className="mt-9 space-y-8 leading-7 text-[var(--muted)]">
           <section>
             <h2 className="text-xl font-bold text-[var(--foreground)]">1. Aceitação</h2>
-            <p className="mt-2">Ao criar uma conta ou usar o ATOS, você concorda com estes Termos e com a nossa Política de Privacidade. Se não concordar, não utilize a plataforma.</p>
+            <p className="mt-2">Ao criar uma conta ou usar o Kairos Escala, você concorda com estes Termos e com a nossa Política de Privacidade. Se não concordar, não utilize a plataforma.</p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-[var(--foreground)]">2. Finalidade do serviço</h2>
-            <p className="mt-2">O ATOS oferece recursos de organização de igrejas, equipes, setores, escalas, confirmações, trocas, comunicados e integração opcional com o Google Agenda. Recursos podem evoluir para melhorar o serviço.</p>
+            <p className="mt-2">O Kairos Escala oferece recursos de organização de igrejas, equipes, setores, escalas, confirmações, trocas, comunicados e integração opcional com o Google Agenda. Recursos podem evoluir para melhorar o serviço.</p>
           </section>
 
           <section>
@@ -34,12 +34,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-[var(--foreground)]">4. Google Agenda</h2>
-            <p className="mt-2">A conexão com o Google Agenda depende do consentimento do usuário e da disponibilidade dos serviços do Google. Você pode revogar a permissão a qualquer momento. Eventos criados pelo ATOS devem ser conferidos pelo usuário, especialmente data, horário e lembretes.</p>
+            <p className="mt-2">A conexão com o Google Agenda depende do consentimento do usuário e da disponibilidade dos serviços do Google. Você pode revogar a permissão a qualquer momento. Eventos criados pelo Kairos Escala devem ser conferidos pelo usuário, especialmente data, horário e lembretes.</p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-[var(--foreground)]">5. Uso permitido</h2>
-            <p className="mt-2">É proibido usar o ATOS para atividades ilícitas, abusivas, fraudulentas, para violar direitos de terceiros, disseminar conteúdo malicioso, contornar controles de segurança ou prejudicar a disponibilidade da plataforma.</p>
+            <p className="mt-2">É proibido usar o Kairos Escala para atividades ilícitas, abusivas, fraudulentas, para violar direitos de terceiros, disseminar conteúdo malicioso, contornar controles de segurança ou prejudicar a disponibilidade da plataforma.</p>
           </section>
 
           <section>
@@ -66,7 +66,7 @@ export default function TermsPage() {
         <footer className="mt-10 flex flex-wrap gap-4 border-t border-[var(--border)] pt-6 text-sm font-semibold">
           <Link className="text-[var(--brand)]" href="/">Início</Link>
           <Link className="text-[var(--brand)]" href="/privacidade">Política de Privacidade</Link>
-          <Link className="text-[var(--brand)]" href="/entrar">Entrar no ATOS</Link>
+          <Link className="text-[var(--brand)]" href="/entrar">Entrar no Kairos Escala</Link>
         </footer>
       </article>
     </main>

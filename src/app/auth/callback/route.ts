@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       calendarFlow,
     });
     const detail = error.message.toLowerCase().includes("code verifier")
-      ? "O navegador não preservou o cookie de segurança do login. Feche outras abas do ATOS e tente novamente."
+      ? "O navegador não preservou o cookie de segurança do login. Feche outras abas do Kairos Escala e tente novamente."
       : `O Google retornou: ${error.message}`;
     return NextResponse.redirect(new URL(`/entrar?erro=${encodeURIComponent(detail)}`, url.origin));
   }

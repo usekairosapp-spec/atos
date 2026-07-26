@@ -53,8 +53,8 @@ export function InstallPwa() {
       <div className="flex items-start gap-4">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]"><Download size={22} /></span>
         <div>
-          <h2 className="text-lg font-bold">Aplicativo ATOS</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">{installed ? "O ATOS já está instalado neste dispositivo." : "Instale gratuitamente para acessar suas escalas direto pela tela inicial."}</p>
+          <h2 className="text-lg font-bold">Aplicativo Kairos Escala</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">{installed ? "O Kairos Escala já está instalado neste dispositivo." : "Instale gratuitamente para acessar suas escalas direto pela tela inicial."}</p>
         </div>
       </div>
       {!installed ? (

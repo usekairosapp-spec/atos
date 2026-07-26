@@ -2,28 +2,28 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f5f3f8;
-  --foreground: #171323;
-  --brand: #6d35d7;
-  --brand-dark: #43208a;
+  --background: #f5f7fb;
+  --foreground: #10192b;
+  --brand: #003f87;
+  --brand-dark: #00284f;
   --success: #159867;
-  --muted: #6f6b7d;
+  --muted: #666f80;
   --surface: #ffffff;
-  --surface-soft: #faf9fc;
-  --border: #e5e0eb;
-  --shadow: 0 18px 50px rgba(38, 25, 65, .08);
+  --surface-soft: #f4f7fb;
+  --border: #dde3ee;
+  --shadow: 0 18px 50px rgba(0, 33, 71, .08);
 }
 
 html.dark {
-  --background: #0e0c14;
-  --foreground: #f5f1fb;
-  --brand: #a77af4;
-  --brand-dark: #8550e4;
+  --background: #0a1420;
+  --foreground: #eef3fa;
+  --brand: #5b9bd9;
+  --brand-dark: #397dbd;
   --success: #55cea1;
-  --muted: #aaa4b5;
-  --surface: #18151f;
-  --surface-soft: #211d2a;
-  --border: #332d3e;
+  --muted: #93a1b5;
+  --surface: #101d2e;
+  --surface-soft: #16263a;
+  --border: #223449;
   --shadow: 0 18px 50px rgba(0, 0, 0, .28);
 }
 
@@ -57,6 +57,6 @@ html.dark input, html.dark select, html.dark textarea { background-color: var(--
 .premium-card { border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
 
 :focus-visible {
-  outline: 3px solid #9a6ee8;
+  outline: 3px solid #5b9bd9;
   outline-offset: 3px;
 }

@@ -51,26 +51,26 @@ export function AvatarPicker({ currentAvatarUrl }: AvatarPickerProps) {
   return (
     <div>
       {isEditing && previewUrl ? (
-        <div className="mb-5 rounded-2xl bg-[#17113b] p-4">
+        <div className="mb-5 rounded-2xl bg-[#112e3b] p-4">
           <p className="mb-3 text-sm font-medium text-white">Arraste a foto para centralizar o rosto</p>
           <div className="relative h-72 overflow-hidden rounded-xl sm:h-80">
             <Cropper image={previewUrl} crop={crop} zoom={zoom} aspect={1} cropShape="round" showGrid onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={handleCropComplete} />
           </div>
           <label className="mt-4 flex items-center gap-3 text-sm font-medium text-white">Zoom
-            <input className="w-full accent-[#9a6ee8]" type="range" min={1} max={3} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} />
+            <input className="w-full accent-[#6ea8e8]" type="range" min={1} max={3} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} />
           </label>
         </div>
       ) : null}
       <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-        <div className="relative h-28 w-28 overflow-hidden rounded-full bg-violet-100 text-[#6827d8] ring-4 ring-white shadow-md">
+        <div className="relative h-28 w-28 overflow-hidden rounded-full bg-blue-100 text-[#277ad8] ring-4 ring-white shadow-md">
           {previewUrl ? <Image className="object-cover" src={previewUrl} alt="Prévia da foto de perfil" fill sizes="112px" unoptimized priority /> : <span className="grid h-full w-full place-items-center"><Camera size={36} /></span>}
         </div>
         <div>
-          <label className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-[#dcd7e5] px-4 py-3 font-semibold text-[#6827d8] hover:bg-violet-50">
+          <label className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-[#d7dee5] px-4 py-3 font-semibold text-[#277ad8] hover:bg-blue-50">
             <RefreshCw size={18} /> {previewUrl ? "Trocar foto" : "Escolher foto"}
             <input className="sr-only" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" onChange={handleFile} />
           </label>
-          {fileLabel ? <p className="mt-2 max-w-xs truncate text-sm text-[#6f6b7d]">{fileLabel}</p> : null}
+          {fileLabel ? <p className="mt-2 max-w-xs truncate text-sm text-[#6b767d]">{fileLabel}</p> : null}
         </div>
       </div>
       {error ? <p className="mt-3 text-sm font-medium text-red-700" role="alert">{error}</p> : null}
@@ -78,7 +78,7 @@ export function AvatarPicker({ currentAvatarUrl }: AvatarPickerProps) {
       <input type="hidden" name="cropY" value={cropArea?.y ?? ""} />
       <input type="hidden" name="cropWidth" value={cropArea?.width ?? ""} />
       <input type="hidden" name="cropHeight" value={cropArea?.height ?? ""} />
-      <p className="mt-3 text-sm text-[#6f6b7d]">JPG, PNG ou WebP, até 5 MB. Arraste e aplique zoom antes de salvar.</p>
+      <p className="mt-3 text-sm text-[#6b767d]">JPG, PNG ou WebP, até 5 MB. Arraste e aplique zoom antes de salvar.</p>
     </div>
   );
 }

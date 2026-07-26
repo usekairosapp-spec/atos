@@ -3,7 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
-const THEME_EVENT = "atos-theme-change";
+const THEME_EVENT = "kairos-theme-change";
 
 function subscribe(callback: () => void) {
   window.addEventListener(THEME_EVENT, callback);
@@ -20,7 +20,7 @@ export function ThemeToggle() {
     const next = isDark ? "light" : "dark";
     document.documentElement.classList.toggle("dark", !isDark);
     document.documentElement.style.colorScheme = next;
-    localStorage.setItem("atos-theme", next);
+    localStorage.setItem("kairos-theme", next);
     window.dispatchEvent(new Event(THEME_EVENT));
   }
 

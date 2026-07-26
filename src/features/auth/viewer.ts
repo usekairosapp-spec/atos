@@ -52,7 +52,7 @@ export const getViewerContext = cache(async function getViewerContext() {
     departmentMemberships: currentDepartmentMemberships,
     churches: churches ?? [],
     currentChurch,
-    churchBranding: { logoUrl: churchLogoUrl, coverUrl: churchCoverUrl, primaryColor: currentChurch?.primary_color ?? "#6d35d7" },
+    churchBranding: { logoUrl: churchLogoUrl, coverUrl: churchCoverUrl, primaryColor: currentChurch?.primary_color ?? "#3584d7" },
     isPlatformAdmin: Boolean(platformRole),
     isChurchAdmin: currentChurchMembership?.role === "church_admin",
     isLeader,

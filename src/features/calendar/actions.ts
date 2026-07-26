@@ -31,7 +31,7 @@ function googleEventPayload(event: Record<string, string | null>) {
   return {
     summary: `${event.service_title} — ${event.department_name}`,
     location: event.service_location || undefined,
-    description: [`Função: ${event.position_name}`, event.service_notes, "Adicionado pelo ATOS."].filter(Boolean).join("\n\n"),
+    description: [`Função: ${event.position_name}`, event.service_notes, "Adicionado pelo Kairos Escala."].filter(Boolean).join("\n\n"),
     start: { dateTime: brazilDateTime(event.service_starts_at ?? ""), timeZone: "America/Sao_Paulo" },
     end: { dateTime: brazilDateTime(event.service_ends_at ?? ""), timeZone: "America/Sao_Paulo" },
     reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 1440 }, { method: "popup", minutes: 120 }] },
@@ -163,7 +163,7 @@ export async function addAssignmentToGoogleCalendar(formData: FormData) {
     if (!response.ok) redirect(withMessage(next, "erro", "O Google não permitiu sincronizar o evento. Verifique se a API do Agenda está ativada."));
     const googleEvent = await response.json() as GoogleEvent;
     if (!googleEvent.id) redirect(withMessage(next, "erro", "O Google não retornou o evento sincronizado."));
-    if (!await saveCalendarLink(supabase, parsed.data.assignmentId, lockToken, googleEvent)) redirect(withMessage(next, "erro", "Evento sincronizado, mas não foi possível salvar o vínculo no ATOS."));
+    if (!await saveCalendarLink(supabase, parsed.data.assignmentId, lockToken, googleEvent)) redirect(withMessage(next, "erro", "Evento sincronizado, mas não foi possível salvar o vínculo no Kairos Escala."));
     redirect(withMessage(next, "sucesso", existingId ? "Evento atualizado no Google Agenda." : "Escala adicionada ao Google Agenda com lembretes."));
   } finally {
     await supabase.rpc("release_my_google_calendar_sync", { target_assignment_id: parsed.data.assignmentId, target_lock_token: lockToken });
