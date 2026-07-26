@@ -116,13 +116,18 @@ export async function removeDepartmentMember(formData: FormData) {
   if (!parsed.success) redirect("/painel/setores?erro=Dados inválidos.");
 
   const supabase = await createClient();
-  const { error } = await supabase.from("department_memberships").delete().eq("department_id", parsed.data.departmentId).eq("user_id", parsed.data.userId);
-  if (error) redirect(`/painel/setores?erro=${encodeURIComponent(error.message)}`);
+  const { data, error, status } = await supabase.from("department_memberships").delete().eq("department_id", parsed.data.departmentId).eq("user_id", parsed.data.userId);
+
+  if (error) {
+    console.error("Erro ao remover membro:", error, "Status:", status);
+    redirect(`/painel/setores?erro=${encodeURIComponent(error.message)}`);
+  }
 
   revalidatePath("/painel/membros");
   revalidatePath("/painel/membros", "layout");
   revalidatePath("/painel/setores");
+  revalidatePath(`/painel/setores/${parsed.data.departmentId}`);
   revalidatePath("/painel/escalas");
   revalidatePath("/painel", "layout");
-  redirect(`/painel/setores?sucesso=Pessoa removida do setor.`);
+  redirect(`/painel/setores?sucesso=Pessoa removida do setor com sucesso.`);
 }
