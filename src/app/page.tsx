@@ -29,10 +29,10 @@ export default async function LandingPage() {
           <span className="mx-auto mb-7 grid h-28 w-28 place-items-center rounded-[2rem] border border-white/15 bg-white/10 shadow-[0_20px_60px_rgba(132,81,236,.28)] backdrop-blur">
             <Image alt="Símbolo ATOS" className="h-24 w-24 object-contain drop-shadow-xl" height={96} priority src="/brand/atos-icon-transparent.png" width={96} />
           </span>
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[.22em] text-violet-200">Times alinhados. Pessoas cuidadas.</p>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[.22em] text-violet-200">ATOS - Coordenador de Escalas</p>
           <h1 className="text-balance text-4xl font-black leading-tight sm:text-6xl">Organize o serviço.<br />Fortaleça a unidade.</h1>
           <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-violet-100 sm:text-lg">
-            Agenda de Times, Organização e Serviço para igrejas que valorizam pessoas e excelência.
+            ATOS é um sistema de coordenação de escalas desenvolvido especificamente para igrejas. Ajuda líderes a organizar e comunicar os turnos de serviço, garantindo que todos os membros saibam seus horários e responsabilidades no ministério.
           </p>
           <div className="mx-auto mt-8 flex max-w-lg flex-wrap justify-center gap-3 text-xs font-semibold text-white/80"><span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><CalendarCheck2 size={15} />Escalas simples</span><span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><ShieldCheck size={15} />Equipes organizadas</span></div>
         </div>
@@ -40,13 +40,14 @@ export default async function LandingPage() {
         <section className="mx-auto mt-12 max-w-4xl rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur sm:p-10">
           <h2 className="mb-4 text-2xl font-bold">O que é ATOS?</h2>
           <p className="mb-4 text-violet-100">
-            ATOS é um gerenciador de escalas e equipes desenvolvido especificamente para igrejas. O aplicativo ajuda líderes a organizar os serviços, gerenciar equipes e garantir que todos os membros saibam seus horários e responsabilidades.
+            ATOS é um sistema de coordenação de escalas de turnos desenvolvido especificamente para igrejas. O aplicativo web ajuda pastores, líderes de departamentos e coordenadores de equipes a organizar e comunicar os turnos de serviço de forma clara e eficiente. Com ATOS, cada membro da congregação sabe exatamente quando e onde deve servir, reduzindo confusões e melhorando a participação em todos os ministérios.
           </p>
           <ul className="space-y-2 text-violet-100">
-            <li>✓ Crie e gerencie escalas de serviço para seus setores</li>
-            <li>✓ Organize equipes e atribua responsabilidades</li>
-            <li>✓ Mantenha todos informados sobre seus horários</li>
-            <li>✓ Gerencie múltiplas igrejas e departamentos</li>
+            <li>✓ Crie e gerencie escalas de turnos para cada departamento ou setor</li>
+            <li>✓ Organize equipes, atribua turnos e defina líderes responsáveis</li>
+            <li>✓ Comunique horários de forma clara a todos os membros</li>
+            <li>✓ Gerencie múltiplas igrejas, departamentos e equipes em um único lugar</li>
+            <li>✓ Acompanhe participação e confirme presença nos turnos</li>
           </ul>
         </section>
 
