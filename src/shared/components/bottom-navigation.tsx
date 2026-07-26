@@ -7,7 +7,7 @@ import type { ViewerRole } from "@/features/auth/viewer";
 
 const items = {
   admin: [
-    ["/painel", "Início", House], ["/painel/escalas", "Gerenciar", ClipboardList], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/membros", "Membros", UsersRound], ["/painel/setores", "Setores", Church], ["/painel/perfil", "Perfil", CircleUserRound],
+    ["/painel", "Início", House], ["/painel/escalas", "Gerenciar", ClipboardList], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/membros", "Membros", UsersRound], ["/painel/setores", "Setores", Church], ["/painel/comunicados", "Mensagens", Megaphone], ["/painel/perfil", "Perfil", CircleUserRound],
   ],
   leader: [
     ["/painel", "Início", House], ["/painel/escalas", "Gerenciar", ClipboardList], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/setores", "Meu setor", Church], ["/painel/comunicados", "Mensagens", Megaphone], ["/painel/perfil", "Perfil", CircleUserRound],

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Megaphone } from "lucide-react";
+import { ArrowLeft, Megaphone, Trash2 } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
+import { deleteAnnouncement } from "@/features/announcements/actions";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_TIMEZONE, formatDate, formatTime } from "@/shared/lib/timezone";
 
@@ -14,7 +15,7 @@ export default async function AnnouncementDetailPage({ params }: PageProps) {
   if (!viewer) notFound();
   const supabase = await createClient();
   const { data: announcement } = await supabase.from("announcements")
-    .select("id, title, body, department_id, target_user_id, created_at, departments(name), profiles!announcements_created_by_fkey(full_name)")
+    .select("id, title, body, department_id, target_user_id, created_by, created_at, departments(name), profiles!announcements_created_by_fkey(full_name)")
     .eq("id", announcementId).maybeSingle();
   if (!announcement) notFound();
 
@@ -25,6 +26,7 @@ export default async function AnnouncementDetailPage({ params }: PageProps) {
   const scopeLabel = announcement.target_user_id ? "Mensagem direta para você" : departmentName ? `Setor: ${departmentName}` : "Toda a igreja";
   const date = new Date(announcement.created_at);
   const tz = viewer.profile.timezone ?? DEFAULT_TIMEZONE;
+  const canDelete = viewer.isChurchAdmin || announcement.created_by === viewer.user.id;
 
   return <main className="mx-auto max-w-2xl px-5 py-8 sm:px-8">
     <Link className="inline-flex items-center gap-2 font-semibold text-[var(--church-brand)]" href="/painel/comunicados"><ArrowLeft size={18} /> Comunicados</Link>
@@ -33,6 +35,7 @@ export default async function AnnouncementDetailPage({ params }: PageProps) {
       <h1 className="mt-5 text-2xl font-bold">{announcement.title}</h1>
       <p className="mt-1 text-sm text-[#717880]">Por {authorName ?? "Liderança"} · {formatDate(date, tz)} às {formatTime(date, tz, { hour: "2-digit", minute: "2-digit" })}</p>
       <p className="mt-6 whitespace-pre-wrap text-base leading-relaxed">{announcement.body}</p>
+      {canDelete ? <form action={deleteAnnouncement} className="mt-6 border-t border-[#eaeef3] pt-5"><input type="hidden" name="announcementId" value={announcement.id} /><button className="inline-flex items-center gap-2 text-sm font-semibold text-red-700" type="submit"><Trash2 size={16} />Apagar comunicado</button></form> : null}
     </section>
   </main>;
 }

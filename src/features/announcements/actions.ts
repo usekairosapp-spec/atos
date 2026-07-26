@@ -45,3 +45,16 @@ export async function createAnnouncement(formData: FormData) {
   revalidatePath("/painel/notificacoes");
   redirect("/painel/comunicados?sucesso=Comunicado publicado com sucesso.");
 }
+
+export async function deleteAnnouncement(formData: FormData) {
+  const parsed = z.object({ announcementId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/comunicados?erro=Comunicado inválido.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_announcement", { target_announcement_id: parsed.data.announcementId });
+  if (error) redirect(`/painel/comunicados?erro=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/painel/comunicados");
+  revalidatePath("/painel/notificacoes");
+  redirect("/painel/comunicados?sucesso=Comunicado removido.");
+}

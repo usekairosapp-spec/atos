@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Megaphone } from "lucide-react";
+import { Megaphone, Trash2 } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
-import { createAnnouncement } from "@/features/announcements/actions";
+import { createAnnouncement, deleteAnnouncement } from "@/features/announcements/actions";
 import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
 import { PendingSubmitButton } from "@/shared/components/pending-submit-button";
@@ -28,7 +28,7 @@ export default async function AnnouncementsPage({ searchParams }: PageProps) {
         ? supabase.from("departments").select("id, name").eq("church_id", churchId).eq("active", true).order("name")
         : supabase.from("departments").select("id, name").in("id", ledDepartmentIds).eq("active", true).order("name"))
       : Promise.resolve({ data: [] }),
-    supabase.from("announcements").select("id, title, body, department_id, target_user_id, created_at, departments(name), profiles!announcements_created_by_fkey(full_name)").eq("church_id", churchId).order("created_at", { ascending: false }).limit(30),
+    supabase.from("announcements").select("id, title, body, department_id, target_user_id, created_by, created_at, departments(name), profiles!announcements_created_by_fkey(full_name)").eq("church_id", churchId).order("created_at", { ascending: false }).limit(30),
   ]);
 
   let eligibleMembers: { id: string; name: string }[] = [];
@@ -88,15 +88,19 @@ export default async function AnnouncementsPage({ searchParams }: PageProps) {
         const department = Array.isArray(item.departments) ? item.departments[0] : item.departments;
         const author = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
         const scopeLabel = item.target_user_id ? "Mensagem direta" : department?.name ? `Setor: ${department.name}` : "Toda a igreja";
-        return <Link className="block rounded-[1.5rem] bg-white p-5 shadow-sm transition hover:-translate-y-0.5" href={`/painel/comunicados/${item.id}`} key={item.id}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="rounded-full bg-[var(--church-brand-soft)] px-3 py-1 text-xs font-semibold text-[var(--church-brand-on-soft)]">{scopeLabel}</span>
-            <small className="text-[#717880]">{formatDate(new Date(item.created_at), tz)}</small>
-          </div>
-          <h3 className="mt-3 text-lg font-bold">{item.title}</h3>
-          <p className="mt-1 line-clamp-2 text-sm text-[#6b767d]">{item.body}</p>
-          <p className="mt-2 text-xs text-[#717880]">Por {author?.full_name ?? "Liderança"}</p>
-        </Link>;
+        const canDelete = isAdmin || item.created_by === viewer.user.id;
+        return <article className="rounded-[1.5rem] bg-white p-5 shadow-sm" key={item.id}>
+          <Link className="block transition hover:opacity-80" href={`/painel/comunicados/${item.id}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="rounded-full bg-[var(--church-brand-soft)] px-3 py-1 text-xs font-semibold text-[var(--church-brand-on-soft)]">{scopeLabel}</span>
+              <small className="text-[#717880]">{formatDate(new Date(item.created_at), tz)}</small>
+            </div>
+            <h3 className="mt-3 text-lg font-bold">{item.title}</h3>
+            <p className="mt-1 line-clamp-2 text-sm text-[#6b767d]">{item.body}</p>
+            <p className="mt-2 text-xs text-[#717880]">Por {author?.full_name ?? "Liderança"}</p>
+          </Link>
+          {canDelete ? <form action={deleteAnnouncement} className="mt-3 border-t border-[#eaeef3] pt-3"><input type="hidden" name="announcementId" value={item.id} /><button className="inline-flex items-center gap-2 text-sm font-semibold text-red-700" type="submit"><Trash2 size={15} />Apagar comunicado</button></form> : null}
+        </article>;
       }) : <div className="rounded-[1.75rem] border border-dashed border-[#c6d2df] bg-white p-8 text-center"><Megaphone className="mx-auto text-[var(--church-brand)]" size={36} /><p className="mt-4 font-semibold">Nenhum comunicado ainda.</p><p className="mt-1 text-sm text-[#6b767d]">{canPublish ? "Publique o primeiro aviso para sua equipe." : "Aqui você receberá os avisos dos líderes."}</p></div>}
     </section>
   </main>;
