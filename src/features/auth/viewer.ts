@@ -18,10 +18,10 @@ export const getViewerContext = cache(async function getViewerContext() {
 
   const membershipChurchIds = churchMemberships?.map((item) => item.church_id) ?? [];
   const { data: churches } = platformRole
-    ? await supabase.from("churches").select("id, name, logo_path, cover_path, primary_color").eq("status", "active").order("name")
+    ? await supabase.from("churches").select("id, name, logo_path, cover_path, primary_color, secondary_color").eq("status", "active").order("name")
     : membershipChurchIds.length
-      ? await supabase.from("churches").select("id, name, logo_path, cover_path, primary_color").in("id", membershipChurchIds).eq("status", "active").order("name")
-      : { data: [] as { id: string; name: string; logo_path: string | null; cover_path: string | null; primary_color: string }[] };
+      ? await supabase.from("churches").select("id, name, logo_path, cover_path, primary_color, secondary_color").in("id", membershipChurchIds).eq("status", "active").order("name")
+      : { data: [] as { id: string; name: string; logo_path: string | null; cover_path: string | null; primary_color: string; secondary_color: string }[] };
   const cookieStore = await cookies();
   const requestedChurchId = cookieStore.get("appescala_church_id")?.value;
   const currentChurch = churches?.find((church) => church.id === requestedChurchId) ?? churches?.[0] ?? null;
@@ -52,7 +52,7 @@ export const getViewerContext = cache(async function getViewerContext() {
     departmentMemberships: currentDepartmentMemberships,
     churches: churches ?? [],
     currentChurch,
-    churchBranding: { logoUrl: churchLogoUrl, coverUrl: churchCoverUrl, primaryColor: currentChurch?.primary_color ?? "#3584d7" },
+    churchBranding: { logoUrl: churchLogoUrl, coverUrl: churchCoverUrl, primaryColor: currentChurch?.primary_color ?? "#3584d7", textColor: currentChurch?.secondary_color ?? "#ffffff" },
     isPlatformAdmin: Boolean(platformRole),
     isChurchAdmin: currentChurchMembership?.role === "church_admin",
     isLeader,
