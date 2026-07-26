@@ -10,7 +10,28 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
   if (!user) redirect("/entrar");
 
   const viewer = await getViewerContext();
-  if (!viewer) redirect("/aguardando-convite");
+  if (!viewer) {
+    const [{ data: profile }, { data: platformRole }] = await Promise.all([
+      supabase.from("profiles").select("full_name, avatar_path").eq("id", user.id).single(),
+      supabase.from("platform_roles").select("role").maybeSingle(),
+    ]);
+
+    if (platformRole) redirect("/central");
+
+    return (
+      <AppShell
+        fullName={profile?.full_name || user.user_metadata?.full_name || user.email || "Usuário"}
+        avatarUrl={null}
+        role="member"
+        unreadCount={0}
+        churchName={null}
+        churchLogoUrl={null}
+        primaryColor="#6d35d7"
+      >
+        {children}
+      </AppShell>
+    );
+  }
 
   if (viewer.isPlatformAdmin) redirect("/central");
   const unreadQuery = supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null);
