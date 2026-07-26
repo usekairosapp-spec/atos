@@ -125,24 +125,22 @@ export async function removeDepartmentMember(formData: FormData) {
 
   const supabase = await createClient();
 
-  // Tenta delete direto com dois filtros
-  const { error: deleteError, count } = await supabase
-    .from("department_memberships")
-    .delete()
-    .eq("department_id", parsed.data.departmentId)
-    .eq("user_id", parsed.data.userId);
+  const { data, error } = await supabase.rpc("remove_department_member", {
+    target_department_id: parsed.data.departmentId,
+    target_user_id: parsed.data.userId,
+  });
 
-  // Log para debug
-  console.log("Delete result:", { deleteError, count, departmentId: parsed.data.departmentId, userId: parsed.data.userId });
+  console.log("Remove department member RPC result:", { data, error });
 
-  if (deleteError) {
-    console.error("Erro ao deletar membro:", deleteError);
-    redirect(`/painel/setores?erro=ERRO: ${encodeURIComponent(deleteError.message)}`);
+  if (error) {
+    console.error("Erro RPC:", error);
+    redirect(`/painel/setores?erro=${encodeURIComponent(error.message)}`);
   }
 
-  if (count === 0) {
-    console.warn("Nenhuma linha deletada - verificar RLS");
-    redirect(`/painel/setores?erro=Não foi possível remover. Verifique permissões.`);
+  const result = data as { success: boolean; error?: string; deleted?: number; message?: string };
+
+  if (!result.success) {
+    redirect(`/painel/setores?erro=${encodeURIComponent(result.error || "Não foi possível remover")}`);
   }
 
   revalidatePath("/painel/membros");
@@ -151,5 +149,5 @@ export async function removeDepartmentMember(formData: FormData) {
   revalidatePath(`/painel/setores/${parsed.data.departmentId}`);
   revalidatePath("/painel/escalas");
   revalidatePath("/painel", "layout");
-  redirect(`/painel/setores?sucesso=Pessoa removida do setor com sucesso.`);
+  redirect(`/painel/setores?sucesso=${encodeURIComponent(result.message || "Pessoa removida com sucesso")}`);
 }
