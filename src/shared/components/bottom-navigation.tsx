@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, Church, CircleUserRound, ClipboardList, House, Megaphone, UsersRound } from "lucide-react";
+import { CalendarDays, Church, CircleUserRound, ClipboardList, House, UsersRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ViewerRole } from "@/features/auth/viewer";
 
 const items = {
   admin: [
-    ["/painel", "Início", House], ["/painel/escalas", "Gerenciar", ClipboardList], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/membros", "Membros", UsersRound], ["/painel/setores", "Setores", Church], ["/painel/comunicados", "Mensagens", Megaphone], ["/painel/perfil", "Perfil", CircleUserRound],
+    ["/painel", "Início", House], ["/painel/escalas", "Gerenciar", ClipboardList], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/membros", "Membros", UsersRound], ["/painel/setores", "Setores", Church], ["/painel/perfil", "Perfil", CircleUserRound],
   ],
   leader: [
-    ["/painel", "Início", House], ["/painel/escalas", "Gerenciar", ClipboardList], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/setores", "Meu setor", Church], ["/painel/comunicados", "Mensagens", Megaphone], ["/painel/perfil", "Perfil", CircleUserRound],
+    ["/painel", "Início", House], ["/painel/escalas", "Gerenciar", ClipboardList], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/setores", "Meu setor", Church], ["/painel/perfil", "Perfil", CircleUserRound],
   ],
   member: [
-    ["/painel", "Início", House], ["/painel/escalas", "Escalas", CalendarDays], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/comunicados", "Mensagens", Megaphone], ["/painel/perfil", "Perfil", CircleUserRound],
+    ["/painel", "Início", House], ["/painel/escalas", "Escalas", CalendarDays], ["/painel/calendario", "Calendário", CalendarDays], ["/painel/perfil", "Perfil", CircleUserRound],
   ],
 } satisfies Record<ViewerRole, Array<[string, string, typeof House]>>;
 
