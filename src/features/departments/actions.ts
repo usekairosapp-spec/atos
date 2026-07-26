@@ -34,3 +34,30 @@ export async function createDepartment(formData: FormData) {
 
   redirect(`/painel/setores/${data.id}?sucesso=Setor criado com sucesso. Agora adicione funções e membros.`);
 }
+
+export async function deleteDepartment(formData: FormData) {
+  const viewer = await getViewerContext();
+  if (!viewer?.currentChurch || viewer.role !== "admin") {
+    redirect("/painel?erro=Sem permissão para deletar setores.");
+  }
+
+  const departmentId = z.string().uuid().safeParse(formData.get("departmentId"));
+  if (!departmentId.success) {
+    redirect("/painel/setores?erro=Setor inválido.");
+  }
+
+  const supabase = await createClient();
+  const { data: department } = await supabase.from("departments").select("church_id, name").eq("id", departmentId.data).single();
+
+  if (!department || department.church_id !== viewer.currentChurch.id) {
+    redirect("/painel/setores?erro=Setor não encontrado ou não pertence à sua igreja.");
+  }
+
+  const { error } = await supabase.from("departments").update({ active: false }).eq("id", departmentId.data);
+
+  if (error) {
+    redirect(`/painel/setores?erro=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/painel/setores?sucesso=Setor ${department.name} deletado com sucesso.`);
+}

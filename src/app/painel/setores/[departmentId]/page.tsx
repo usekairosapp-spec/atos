@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
 import { createPosition, togglePosition, updatePosition } from "@/features/positions/actions";
+import { deleteDepartment } from "@/features/departments/actions";
 import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
 
@@ -49,6 +50,8 @@ export default async function DepartmentDetailPage({ params, searchParams }: Pag
           }) : <p className="py-6 text-[#6f6b7d]">Nenhum membro inscrito neste setor.</p>}
         </div>
       </section>
+
+      {viewer.role === "admin" ? <details className="mt-8 rounded-2xl border border-red-100 bg-white p-6"><summary className="flex cursor-pointer items-center gap-2 font-semibold text-red-700"><Trash2 size={18} />Deletar setor</summary><p className="mt-4 text-sm text-[#6f6b7d]">Esta ação é irreversível. O setor será removido, assim como todas as suas funções e escalas.</p><form action={deleteDepartment} className="mt-4"><input type="hidden" name="departmentId" value={department.id} /><button className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-6 font-semibold text-red-700 w-full">Confirmar exclusão do setor</button></form></details> : null}
     </main>
   );
 }
