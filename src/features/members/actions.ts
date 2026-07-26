@@ -96,35 +96,6 @@ export async function removeChurchMember(formData: FormData) {
   redirect(`/painel/membros?sucesso=${encodeURIComponent(count > 0 ? `Membro removido e ${count} participação(ões) futura(s) cancelada(s).` : "Membro removido da igreja e dos setores.")}`);
 }
 
-export async function promoteToChurchAdmin(formData: FormData) {
-  const userId = z.string().uuid().safeParse(formData.get("userId"));
-  if (!userId.success) redirect("/painel/membros?erro=Usuário inválido.");
-
-  const supabase = await createClient();
-  const { error } = await supabase.from("platform_roles").insert({
-    user_id: userId.data,
-    role: "church_admin",
-  });
-  if (error && error.code !== "23505") redirect(`/painel/membros?erro=${encodeURIComponent(error.message)}`);
-
-  revalidatePath("/painel/membros");
-  revalidatePath("/painel", "layout");
-  redirect("/painel/membros?sucesso=Pessoa promovida a administradora da igreja.");
-}
-
-export async function removeChurchAdmin(formData: FormData) {
-  const userId = z.string().uuid().safeParse(formData.get("userId"));
-  if (!userId.success) redirect("/painel/membros?erro=Usuário inválido.");
-
-  const supabase = await createClient();
-  const { error } = await supabase.from("platform_roles").delete().eq("user_id", userId.data).eq("role", "church_admin");
-  if (error) redirect(`/painel/membros?erro=${encodeURIComponent(error.message)}`);
-
-  revalidatePath("/painel/membros");
-  revalidatePath("/painel", "layout");
-  redirect("/painel/membros?sucesso=Permissão de administradora removida.");
-}
-
 export async function platformReviewMembership(formData: FormData) {
   const parsed = z.object({ membershipId: z.string().uuid(), decision: z.enum(["active", "rejected"]) }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect("/central/solicitacoes?erro=Solicitação inválida.");
