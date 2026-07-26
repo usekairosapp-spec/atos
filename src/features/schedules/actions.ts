@@ -85,11 +85,30 @@ export async function publishSchedule(formData: FormData) {
   redirect(`/painel/escalas/${scheduleId.data}?sucesso=Escala publicada com sucesso.`);
 }
 
+const confirmAssignmentSchema = z.object({
+  assignmentId: z.string().uuid(),
+  scheduleId: z.string().uuid(),
+  availability: z.enum(["full", "partial"]).default("full"),
+  serviceDate: z.string().optional(),
+  availableUntilTime: z.string().optional(),
+});
+
 export async function confirmAssignment(formData: FormData) {
-  const parsed = z.object({ assignmentId: z.string().uuid(), scheduleId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  const parsed = confirmAssignmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect("/painel/escalas?erro=Confirmação inválida.");
+
+  let availableUntil: string | null = null;
+  if (parsed.data.availability === "partial") {
+    if (!parsed.data.serviceDate || !parsed.data.availableUntilTime) {
+      redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=Informe até que horário você pode ficar.`);
+    }
+    const candidate = new Date(`${parsed.data.serviceDate}T${parsed.data.availableUntilTime}:00-03:00`);
+    if (Number.isNaN(candidate.getTime())) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=Horário inválido.`);
+    availableUntil = candidate.toISOString();
+  }
+
   const supabase = await createClient();
-  const { error } = await supabase.rpc("confirm_schedule_assignment", { target_assignment_id: parsed.data.assignmentId });
+  const { error } = await supabase.rpc("confirm_schedule_assignment", { target_assignment_id: parsed.data.assignmentId, target_available_until: availableUntil });
   if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
   redirect(`/painel/escalas/${parsed.data.scheduleId}/confirmado/${parsed.data.assignmentId}`);
