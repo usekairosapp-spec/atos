@@ -15,7 +15,7 @@ export default async function NewSchedulePage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const departmentsQuery = supabase.from("departments").select("id, name").eq("church_id", viewer.currentChurch.id).eq("active", true).order("name");
   const { data: departments } = leaderDepartmentIds.length > 0 ? await departmentsQuery.in("id", leaderDepartmentIds) : await departmentsQuery;
-  const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-[#ddd7e7] bg-white px-4 outline-none focus:border-[#6827d8]";
+  const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-[#ddd7e7] bg-white px-4 text-gray-900 outline-none focus:border-[#6827d8] dark:bg-[#2a2736] dark:text-white dark:border-[#3d3549]";
   return <main className="mx-auto max-w-3xl px-5 py-8 sm:px-8"><Link className="inline-flex items-center gap-2 font-semibold text-[#6827d8]" href="/painel/escalas"><ArrowLeft size={18} /> Escalas</Link><p className="mt-7 text-sm font-semibold uppercase tracking-[.15em] text-[#6827d8]">Nova escala</p><h1 className="mt-2 text-3xl font-bold">Dados do evento</h1><p className="mt-2 text-[#6f6b7d]">Ela ficará como rascunho até você montar a equipe e publicar.</p><AuthMessage {...message} />
     <form action={createSchedule} className="mt-8 grid gap-5 rounded-[1.75rem] bg-white p-6 shadow-sm sm:grid-cols-2">
       <label className="font-semibold sm:col-span-2">Data do culto<input className={inputClass} defaultValue={message.data} name="date" type="date" required /></label>
