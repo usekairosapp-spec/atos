@@ -24,6 +24,7 @@ export async function createDepartment(formData: FormData) {
   const { data, error } = await supabase.from("departments").insert({
     church_id: viewer.currentChurch.id,
     name: parsed.data.name,
+    type: "custom",
     active: true,
   }).select("id").single();
 
