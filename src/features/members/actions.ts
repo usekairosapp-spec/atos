@@ -116,16 +116,10 @@ export async function removeDepartmentMember(formData: FormData) {
   if (!parsed.success) redirect("/painel/setores?erro=Dados inválidos.");
 
   const supabase = await createClient();
-
-  // Primeiro verifica se o registro existe
-  const { data: existing } = await supabase.from("department_memberships").select("id").eq("department_id", parsed.data.departmentId).eq("user_id", parsed.data.userId).single();
-
-  if (!existing) {
-    redirect("/painel/setores?erro=Membro não encontrado neste setor.");
-  }
-
-  // Agora deleta
-  const { error } = await supabase.from("department_memberships").delete().eq("id", existing.id);
+  const { error } = await supabase.rpc("remove_department_member", {
+    target_department_id: parsed.data.departmentId,
+    target_user_id: parsed.data.userId,
+  });
 
   if (error) {
     console.error("Erro ao remover membro:", error);
