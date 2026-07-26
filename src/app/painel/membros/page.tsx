@@ -18,11 +18,12 @@ export default async function MembersPage({ searchParams }: PageProps) {
   if (viewer.role !== "admin" || !viewer.currentChurch) redirect("/painel?erro=Sem permissão administrativa.");
   const supabase = await createClient();
 
-  const [{ data: church }, { data: memberships }, { data: departments }, { data: departmentMemberships }, message] = await Promise.all([
+  const [{ data: church }, { data: memberships }, { data: departments }, { data: departmentMemberships }, { data: allDepartmentMemberships }, message] = await Promise.all([
     supabase.from("churches").select("name, invite_code").eq("id", viewer.currentChurch.id).single(),
     supabase.from("church_memberships").select("id, user_id, role, status, profiles!church_memberships_user_id_fkey(full_name)").eq("church_id", viewer.currentChurch.id).order("created_at"),
     supabase.from("departments").select("id, name").eq("church_id", viewer.currentChurch.id).eq("active", true).order("name"),
     supabase.from("department_memberships").select("department_id, user_id, role, status, departments!inner(church_id)").eq("departments.church_id", viewer.currentChurch.id).eq("role", "leader").eq("status", "active"),
+    supabase.from("department_memberships").select("user_id, role, departments!inner(id, name)").eq("departments.church_id", viewer.currentChurch.id).eq("status", "active"),
     searchParams,
   ]);
   const activeMembers = memberships?.filter((item) => item.status === "active") ?? [];
@@ -32,6 +33,18 @@ export default async function MembersPage({ searchParams }: PageProps) {
   }));
   const departmentNames = new Map(departments?.map((item) => [item.id, item.name]) ?? []);
   const activeLeaders = departmentMemberships?.filter((item) => departmentNames.has(item.department_id)) ?? [];
+
+  const memberDepartments = new Map<string, { name: string; role: string }[]>();
+  allDepartmentMemberships?.forEach((dm) => {
+    const dept = (dm.departments as any);
+    if (dept && dept.name) {
+      const key = dm.user_id;
+      if (!memberDepartments.has(key)) {
+        memberDepartments.set(key, []);
+      }
+      memberDepartments.get(key)?.push({ name: dept.name, role: dm.role });
+    }
+  });
 
   return (
     <main className="min-h-screen bg-[#f7f6fb] px-4 py-6 sm:px-8">
@@ -81,7 +94,9 @@ export default async function MembersPage({ searchParams }: PageProps) {
             {activeMembers.map((item) => {
               const profile = item.profiles as ProfileRelation;
               const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
-              return <article className="flex flex-col justify-between gap-4 py-4 sm:flex-row sm:items-center" key={item.id}><div><p className="font-semibold">{name || "Membro"}</p><p className="text-sm text-[#6f6b7d]">{item.role === "church_admin" ? "Administradora da igreja" : "Membro ativo"}</p></div>{item.role !== "church_admin" ? <form action={removeChurchMember}><input name="membershipId" type="hidden" value={item.id} /><ConfirmSubmitButton confirmation={`Remover ${name || "este membro"} da igreja e cancelar suas participações futuras?`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-300 px-4 font-semibold text-red-700" pendingLabel="Removendo..."><UserRoundX size={18} />Remover</ConfirmSubmitButton></form> : <span className="text-sm font-semibold text-[#6f6b7d]">Protegida</span>}</article>;
+              const userDepts = memberDepartments.get(item.user_id) ?? [];
+              const deptDisplay = item.role === "church_admin" ? "Administradora da igreja" : userDepts.length > 0 ? userDepts.map(d => d.name).join(", ") : "Sem setor";
+              return <article className="flex flex-col justify-between gap-4 py-4 sm:flex-row sm:items-center" key={item.id}><div><p className="font-semibold">{name || "Membro"}</p><p className="text-sm text-[#6f6b7d]">{deptDisplay}</p></div>{item.role !== "church_admin" ? <form action={removeChurchMember}><input name="membershipId" type="hidden" value={item.id} /><ConfirmSubmitButton confirmation={`Remover ${name || "este membro"} da igreja e cancelar suas participações futuras?`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-300 px-4 font-semibold text-red-700" pendingLabel="Removendo..."><UserRoundX size={18} />Remover</ConfirmSubmitButton></form> : <span className="text-sm font-semibold text-[#6f6b7d]">Protegida</span>}</article>;
             })}
             {!activeMembers.length ? <p className="py-6 text-[#6f6b7d]">Nenhum membro ativo.</p> : null}
           </div>
