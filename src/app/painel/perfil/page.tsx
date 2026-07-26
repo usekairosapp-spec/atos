@@ -27,7 +27,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
           <label className="font-medium">Nome completo<input className="mt-2 min-h-13 w-full rounded-xl border border-[#d7dee5] px-4" name="fullName" defaultValue={viewer.profile.fullName} required /></label>
           <label className="font-medium">Telefone<input className="mt-2 min-h-13 w-full rounded-xl border border-[#d7dee5] px-4" name="phone" type="tel" defaultValue={profile?.phone ?? ""} /></label>
         </div>
-        <label className="mt-5 block font-medium">E-mail<input className="mt-2 min-h-13 w-full rounded-xl border border-[#e8ecf1] bg-[#f6f9fb] px-4 text-[#6b767d]" value={viewer.user.email ?? ""} readOnly /></label>
+        <label className="mt-5 block font-medium">E-mail<input className="mt-2 min-h-13 w-full rounded-xl border border-[#e8ecf1] bg-[#f6f9fb] px-4 text-[#6b767d] dark:border-[#353e49] dark:bg-[#273136] dark:text-[#9aa5b1]" value={viewer.user.email ?? ""} readOnly /></label>
         <label className="mt-5 block font-medium">Fuso horário
           <select className="mt-2 min-h-13 w-full rounded-xl border border-[#d7dee5] px-4" defaultValue={viewer.profile.timezone} name="timezone">
             {TIMEZONE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}

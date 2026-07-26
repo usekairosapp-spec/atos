@@ -47,7 +47,7 @@ export default async function MembersPage({ searchParams }: PageProps) {
   });
 
   return (
-    <main className="min-h-screen bg-[#f6f9fb] px-4 py-6 sm:px-8">
+    <main className="min-h-screen bg-[var(--background)] px-4 py-6 sm:px-8">
       <div className="mx-auto max-w-5xl">
         <Link className="inline-flex items-center gap-2 font-semibold text-[var(--church-brand)]" href="/painel"><ArrowLeft size={18} /> Voltar</Link>
         <div className="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm text-[#6b767d]">{church?.name}</p><h1 className="text-3xl font-bold">Membros e líderes</h1></div><div className="rounded-xl bg-white px-4 py-3 shadow-sm"><span className="text-xs text-[#6b767d]">Código de convite</span><p className="mt-1 text-lg font-bold tracking-widest text-[var(--church-brand)]">{church?.invite_code}</p>{church?.invite_code ? <div className="mt-2"><CopyInviteCode code={church.invite_code} /></div> : null}</div></div>
