@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
 import { createPosition, togglePosition, updatePosition } from "@/features/positions/actions";
 import { deleteDepartment } from "@/features/departments/actions";
+import { removeDepartmentMember } from "@/features/members/actions";
 import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
 
@@ -43,9 +44,12 @@ export default async function DepartmentDetailPage({ params, searchParams }: Pag
           {members && members.length > 0 ? members.map((member) => {
             const profile = member.profiles as any;
             const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
-            return <article className="py-3" key={member.user_id}>
-              <p className="font-semibold">{name || "Membro"}</p>
-              <p className="text-sm text-[#6f6b7d]">{member.role === "leader" ? "Líder" : "Membro"} - {member.status === "active" ? "Ativo" : "Inativo"}</p>
+            return <article className="flex items-center justify-between py-3" key={member.user_id}>
+              <div>
+                <p className="font-semibold">{name || "Membro"}</p>
+                <p className="text-sm text-[#6f6b7d]">{member.role === "leader" ? "Líder" : "Membro"} - {member.status === "active" ? "Ativo" : "Inativo"}</p>
+              </div>
+              {viewer.role === "admin" ? <form action={removeDepartmentMember} className="flex"><input type="hidden" name="departmentId" value={department.id} /><input type="hidden" name="userId" value={member.user_id} /><button className="rounded-lg border border-red-300 bg-red-50 p-2 text-red-700 hover:bg-red-100" type="submit"><X size={18} /></button></form> : null}
             </article>;
           }) : <p className="py-6 text-[#6f6b7d]">Nenhum membro inscrito neste setor.</p>}
         </div>

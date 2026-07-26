@@ -107,3 +107,20 @@ export async function platformReviewMembership(formData: FormData) {
   revalidatePath("/central", "layout");
   redirect(`/central/solicitacoes?sucesso=${parsed.data.decision === "active" ? "Membro aprovado com sucesso." : "Solicitação recusada."}`);
 }
+
+export async function removeDepartmentMember(formData: FormData) {
+  const parsed = z.object({
+    departmentId: z.string().uuid(),
+    userId: z.string().uuid(),
+  }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/setores?erro=Dados inválidos.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("department_memberships").delete().eq("department_id", parsed.data.departmentId).eq("user_id", parsed.data.userId);
+  if (error) redirect(`/painel/setores?erro=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/painel/membros");
+  revalidatePath("/painel/setores");
+  revalidatePath("/painel/escalas");
+  redirect(`/painel/setores?sucesso=Pessoa removida do setor.`);
+}
