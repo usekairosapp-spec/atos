@@ -26,11 +26,6 @@ export const getViewerContext = cache(async function getViewerContext() {
   const requestedChurchId = cookieStore.get("appescala_church_id")?.value;
   const currentChurch = churches?.find((church) => church.id === requestedChurchId) ?? churches?.[0] ?? null;
 
-  // Se não há igrejas ativas e não é admin, retorna null
-  // (será redirecido para página de onboarding no layout)
-  if (!currentChurch && churches && churches.length === 0 && !platformRole) {
-    return null;
-  }
 
   const currentChurchMembership = churchMemberships?.find((item) => item.church_id === currentChurch?.id);
   const { data: currentDepartments } = currentChurch
