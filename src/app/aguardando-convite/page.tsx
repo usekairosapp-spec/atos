@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
-export default async function NovoUsuarioPage() {
+export default async function AguardandoConvitePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
@@ -14,7 +14,7 @@ export default async function NovoUsuarioPage() {
           <div className="mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m5.506 0C15.009 17.799 16 14.517 16 11m-6 0c0-1.657-.895-3.176-2.236-3.95M5.003 9.25H1.25m3.753-3.750c1.341-.775 2.236-2.293 2.236-3.95 0-2.761-2.238-5-5-5S.25-8.75.25-6c0 1.657.895 3.176 2.236 3.95m15.504 6.692c.526 1.52.526 3.219 0 4.738M4.5 20.748S3 16.357 3 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m5.506 0C15.009 17.799 16 14.517 16 11m-6 0c0-1.657-.895-3.176-2.236-3.95M5.003 9.25H1.25m3.753-3.75c1.341-.775 2.236-2.293 2.236-3.95 0-2.761-2.238-5-5-5S.25-8.75.25-6c0 1.657.895 3.176 2.236 3.95m15.504 6.692c.526 1.52.526 3.219 0 4.738M4.5 20.748S3 16.357 3 12" />
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Bem-vindo ao ATOS!</h1>

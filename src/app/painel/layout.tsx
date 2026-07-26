@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
   if (!user) redirect("/entrar");
 
   const viewer = await getViewerContext();
-  if (!viewer) redirect("/painel/novo-usuario");
+  if (!viewer) redirect("/aguardando-convite");
 
   if (viewer.isPlatformAdmin) redirect("/central");
   const unreadQuery = supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null);
