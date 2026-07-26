@@ -29,7 +29,7 @@ export default async function LandingPage() {
           <span className="mx-auto mb-7 grid h-28 w-28 place-items-center rounded-[2rem] border border-white/15 bg-white/10 shadow-[0_20px_60px_rgba(132,81,236,.28)] backdrop-blur">
             <Image alt="Símbolo ATOS" className="h-24 w-24 object-contain drop-shadow-xl" height={96} priority src="/brand/atos-icon-transparent.png" width={96} />
           </span>
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[.22em] text-violet-200">ATOS by Usekairos</p>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[.22em] text-violet-200">ATOS - GERENCIAMENTO DE ESCALAS</p>
           <h1 className="text-balance text-4xl font-black leading-tight sm:text-6xl">Organize o serviço.<br />Fortaleça a unidade.</h1>
           <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-violet-100 sm:text-lg">
             ATOS é um sistema de coordenação de escalas desenvolvido especificamente para igrejas. Ajuda líderes a organizar e comunicar os turnos de serviço, garantindo que todos os membros saibam seus horários e responsabilidades no ministério.
