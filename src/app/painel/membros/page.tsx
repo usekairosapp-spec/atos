@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, UserRoundCheck, UserRoundX } from "lucide-react";
-import { assignDepartment, removeChurchMember, removeDepartmentLeadership, reviewMembership } from "@/features/members/actions";
+import { assignDepartment, removeChurchMember, removeDepartmentLeadership, reviewMembership, promoteToChurchAdmin, removeChurchAdmin } from "@/features/members/actions";
 import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
 import { ConfirmSubmitButton } from "@/shared/components/confirm-submit-button";
@@ -18,12 +18,13 @@ export default async function MembersPage({ searchParams }: PageProps) {
   if (viewer.role !== "admin" || !viewer.currentChurch) redirect("/painel?erro=Sem permissão administrativa.");
   const supabase = await createClient();
 
-  const [{ data: church }, { data: memberships }, { data: departments }, { data: departmentMemberships }, { data: allDepartmentMemberships }, message] = await Promise.all([
+  const [{ data: church }, { data: memberships }, { data: departments }, { data: departmentMemberships }, { data: allDepartmentMemberships }, { data: churchAdmins }, message] = await Promise.all([
     supabase.from("churches").select("name, invite_code").eq("id", viewer.currentChurch.id).single(),
     supabase.from("church_memberships").select("id, user_id, role, status, profiles!church_memberships_user_id_fkey(full_name)").eq("church_id", viewer.currentChurch.id).order("created_at"),
     supabase.from("departments").select("id, name").eq("church_id", viewer.currentChurch.id).eq("active", true).order("name"),
     supabase.from("department_memberships").select("department_id, user_id, role, status, departments!inner(church_id)").eq("departments.church_id", viewer.currentChurch.id).eq("role", "leader").eq("status", "active"),
     supabase.from("department_memberships").select("user_id, role, departments!inner(id, name)").eq("departments.church_id", viewer.currentChurch.id).eq("status", "active"),
+    supabase.from("platform_roles").select("user_id").eq("role", "church_admin"),
     searchParams,
   ]);
   const activeMembers = memberships?.filter((item) => item.status === "active") ?? [];
@@ -45,6 +46,8 @@ export default async function MembersPage({ searchParams }: PageProps) {
       memberDepartments.get(key)?.push({ name: dept.name, role: dm.role });
     }
   });
+
+  const churchAdminIds = new Set(churchAdmins?.map((admin) => admin.user_id) ?? []);
 
   return (
     <main className="min-h-screen bg-[#f7f6fb] px-4 py-6 sm:px-8">
@@ -76,6 +79,46 @@ export default async function MembersPage({ searchParams }: PageProps) {
             <fieldset className="rounded-2xl border border-[var(--border)] p-4"><legend className="px-2 font-bold">Equipes</legend><p className="mb-3 text-sm text-[var(--muted)]">Marque uma ou várias. As equipes anteriores da pessoa serão mantidas.</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{departments?.map((department) => <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl bg-[var(--surface-soft)] px-4 font-semibold" key={department.id}><input className="h-5 w-5 accent-[var(--brand)]" name="departmentId" type="checkbox" value={department.id} />{department.name}</label>)}</div></fieldset>
             <button className="min-h-12 rounded-xl bg-[#6827d8] px-5 font-semibold text-white"><UserRoundCheck className="mr-2 inline" size={18} />Adicionar às equipes selecionadas</button>
           </form>
+        </section>
+
+        <section className="mt-6 rounded-[1.5rem] bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-bold">Administradoras da igreja</h2>
+          <p className="mt-1 text-sm text-[#6f6b7d]">Pessoas com acesso total à administração da igreja. Podem gerenciar setores, membros e todas as configurações.</p>
+          <div className="mt-4">
+            <div className="mb-4 rounded-2xl bg-[#f7f6fb] p-4">
+              <p className="mb-3 text-sm font-semibold">Promover a administradora</p>
+              <form action={promoteToChurchAdmin} className="flex flex-col gap-3 sm:flex-row">
+                <select className="flex-1 min-h-12 rounded-xl border border-[#ddd7e7] px-3" name="userId" required>
+                  <option value="">Selecione um membro</option>
+                  {activeMembers.filter((m) => !churchAdminIds.has(m.user_id)).map((item) => {
+                    const profile = item.profiles as ProfileRelation;
+                    const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
+                    return <option value={item.user_id} key={item.user_id}>{name || "Membro"}</option>;
+                  })}
+                </select>
+                <button className="min-h-12 rounded-xl bg-[#6827d8] px-5 font-semibold text-white" type="submit">Promover</button>
+              </form>
+            </div>
+            <div className="divide-y divide-[#ece8f1]">
+              {Array.from(churchAdminIds).map((adminId) => {
+                const adminMembership = activeMembers.find((m) => m.user_id === adminId);
+                if (!adminMembership) return null;
+                const profile = adminMembership.profiles as ProfileRelation;
+                const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
+                return <article className="flex flex-col justify-between gap-4 py-4 sm:flex-row sm:items-center" key={adminId}>
+                  <div>
+                    <p className="font-semibold">{name || "Administradora"}</p>
+                    <p className="text-sm text-[#6f6b7d]">Administradora da igreja</p>
+                  </div>
+                  <form action={removeChurchAdmin}>
+                    <input name="userId" type="hidden" value={adminId} />
+                    <ConfirmSubmitButton confirmation={`Remover ${name || "esta pessoa"} da administração?`} className="min-h-11 rounded-xl border border-amber-300 px-4 font-semibold text-amber-800" pendingLabel="Atualizando...">Remover administração</ConfirmSubmitButton>
+                  </form>
+                </article>;
+              })}
+              {churchAdminIds.size === 0 ? <p className="py-6 text-[#6f6b7d]">Nenhuma administradora definida.</p> : null}
+            </div>
+          </div>
         </section>
 
         <section className="mt-6 rounded-[1.5rem] bg-white p-6 shadow-sm">
