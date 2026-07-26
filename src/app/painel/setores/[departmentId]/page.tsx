@@ -15,9 +15,10 @@ export default async function DepartmentDetailPage({ params, searchParams }: Pag
   const [{ departmentId }, message, viewer] = await Promise.all([params, searchParams, getViewerContext()]);
   if (!viewer || viewer.role === "member") redirect("/painel?erro=Sem permissão para acessar setores.");
   const supabase = await createClient();
-  const [{ data: department }, { data: positions }] = await Promise.all([
+  const [{ data: department }, { data: positions }, { data: members }] = await Promise.all([
     supabase.from("departments").select("id, name, church_id").eq("id", departmentId).single(),
     supabase.from("positions").select("id, name, active").eq("department_id", departmentId).order("active", { ascending: false }).order("name"),
+    supabase.from("department_memberships").select("user_id, role, status, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", departmentId).order("role", { ascending: false }).order("created_at"),
   ]);
   if (!department) redirect("/painel/setores?erro=Setor não encontrado.");
   if (!viewer.currentChurch || department.church_id !== viewer.currentChurch.id) redirect("/painel/setores?erro=Setor não pertence à igreja selecionada.");
@@ -32,6 +33,21 @@ export default async function DepartmentDetailPage({ params, searchParams }: Pag
       {canEdit ? <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm"><h2 className="text-lg font-bold">Adicionar nova função</h2><p className="mt-1 text-sm text-[#6f6b7d]">Como líder, você pode criar quantas funções seu setor precisar.</p><form action={createPosition} className="mt-4 flex flex-col gap-3 sm:flex-row"><input type="hidden" name="departmentId" value={department.id} /><label className="sr-only" htmlFor="position-name">Nome da função</label><input className="min-h-12 flex-1 rounded-xl border border-[#ddd7e7] px-4" id="position-name" name="name" placeholder="Ex.: Iluminação" required /><button className="min-h-12 rounded-xl bg-[#6827d8] px-5 font-semibold text-white"><Plus className="mr-2 inline" size={18} />Adicionar</button></form></section> : <p className="mt-6 rounded-xl bg-violet-50 px-4 py-3 text-sm text-[#5b31a4]">As funções são gerenciadas pelo líder deste setor.</p>}
       <section className="mt-6 space-y-3">
         {positions?.map((position) => canEdit ? <article className={`rounded-2xl bg-white p-5 shadow-sm ${position.active ? "" : "opacity-60"}`} key={position.id}><form action={updatePosition} className="flex flex-col gap-3 sm:flex-row sm:items-end"><input type="hidden" name="positionId" value={position.id} /><input type="hidden" name="departmentId" value={department.id} /><label className="flex-1 font-medium">Função<input className="mt-2 min-h-11 w-full rounded-xl border border-[#ddd7e7] px-3" name="name" defaultValue={position.name} required /></label><button className="rounded-xl border border-[#6827d8] px-4 py-3 font-semibold text-[#6827d8]">Salvar</button></form><form action={togglePosition} className="mt-3"><input type="hidden" name="positionId" value={position.id} /><input type="hidden" name="departmentId" value={department.id} /><input type="hidden" name="active" value={String(!position.active)} /><button className="text-sm font-semibold text-[#6f6b7d]">{position.active ? "Arquivar função" : "Reativar função"}</button></form></article> : <article className="rounded-2xl bg-white p-5 shadow-sm" key={position.id}><strong>{position.name}</strong></article>)}
+      </section>
+
+      <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold">Membros do setor</h2>
+        <p className="mt-1 text-sm text-[#6f6b7d]">Todos os membros inscritos neste setor</p>
+        <div className="mt-4 divide-y divide-[#ece8f1]">
+          {members && members.length > 0 ? members.map((member) => {
+            const profile = member.profiles as any;
+            const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
+            return <article className="py-3" key={member.user_id}>
+              <p className="font-semibold">{name || "Membro"}</p>
+              <p className="text-sm text-[#6f6b7d]">{member.role === "leader" ? "Líder" : "Membro"} - {member.status === "active" ? "Ativo" : "Inativo"}</p>
+            </article>;
+          }) : <p className="py-6 text-[#6f6b7d]">Nenhum membro inscrito neste setor.</p>}
+        </div>
       </section>
     </main>
   );
