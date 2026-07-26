@@ -17,7 +17,7 @@ export default async function DepartmentsPage({ searchParams }: PageProps) {
   const { data: departments } = viewer.role === "admin" ? await query.eq("church_id", viewer.currentChurch.id) : await query.in("id", viewer.departmentMemberships.filter((item) => item.role === "leader").map((item) => item.department_id));
 
   return <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-    <p className="text-sm font-semibold uppercase tracking-[.15em] text-[#277ad8]">Equipes</p>
+    <p className="text-sm font-semibold uppercase tracking-[.15em] text-[var(--church-brand)]">Equipes</p>
     <h1 className="mt-2 text-3xl font-bold">{viewer.role === "admin" ? "Setores da igreja" : "Meus setores"}</h1>
     <AuthMessage {...message} />
 
@@ -25,8 +25,8 @@ export default async function DepartmentsPage({ searchParams }: PageProps) {
       <h2 className="text-lg font-bold">Criar novo setor</h2>
       <p className="mt-1 text-sm text-[#6b767d]">Adicione um novo setor à sua igreja. Você poderá gerenciar funções e membros após criá-lo.</p>
       <form action={createDepartment} className="mt-4 flex flex-col gap-3 sm:flex-row">
-        <input className="min-h-12 flex-1 rounded-xl border border-[#d7dee7] px-4 outline-none focus:border-[#277ad8]" name="name" placeholder="Ex.: Som, Louvor, Técnica" required />
-        <button className="min-h-12 rounded-xl bg-[#277ad8] px-5 font-semibold text-white"><Plus className="mr-2 inline" size={18} />Criar setor</button>
+        <input className="min-h-12 flex-1 rounded-xl border border-[#d7dee7] px-4 outline-none focus:border-[var(--church-brand)]" name="name" placeholder="Ex.: Som, Louvor, Técnica" required />
+        <button className="min-h-12 rounded-xl bg-[var(--church-brand)] px-5 font-semibold text-white"><Plus className="mr-2 inline" size={18} />Criar setor</button>
       </form>
     </section> : null}
 

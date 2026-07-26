@@ -49,8 +49,8 @@ export default async function MembersPage({ searchParams }: PageProps) {
   return (
     <main className="min-h-screen bg-[#f6f9fb] px-4 py-6 sm:px-8">
       <div className="mx-auto max-w-5xl">
-        <Link className="inline-flex items-center gap-2 font-semibold text-[#277ad8]" href="/painel"><ArrowLeft size={18} /> Voltar</Link>
-        <div className="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm text-[#6b767d]">{church?.name}</p><h1 className="text-3xl font-bold">Membros e líderes</h1></div><div className="rounded-xl bg-white px-4 py-3 shadow-sm"><span className="text-xs text-[#6b767d]">Código de convite</span><p className="mt-1 text-lg font-bold tracking-widest text-[#277ad8]">{church?.invite_code}</p>{church?.invite_code ? <div className="mt-2"><CopyInviteCode code={church.invite_code} /></div> : null}</div></div>
+        <Link className="inline-flex items-center gap-2 font-semibold text-[var(--church-brand)]" href="/painel"><ArrowLeft size={18} /> Voltar</Link>
+        <div className="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm text-[#6b767d]">{church?.name}</p><h1 className="text-3xl font-bold">Membros e líderes</h1></div><div className="rounded-xl bg-white px-4 py-3 shadow-sm"><span className="text-xs text-[#6b767d]">Código de convite</span><p className="mt-1 text-lg font-bold tracking-widest text-[var(--church-brand)]">{church?.invite_code}</p>{church?.invite_code ? <div className="mt-2"><CopyInviteCode code={church.invite_code} /></div> : null}</div></div>
         <AuthMessage {...message} />
 
         <section className="mt-8 rounded-[1.5rem] bg-white p-6 shadow-sm">
@@ -74,7 +74,7 @@ export default async function MembersPage({ searchParams }: PageProps) {
               <label className="font-semibold">Papel nas equipes selecionadas<select className="mt-2 min-h-12 w-full rounded-xl border border-[#d7dee7] px-3" name="role"><option value="member">Membro</option><option value="leader">Líder</option></select></label>
             </div>
             <fieldset className="rounded-2xl border border-[var(--border)] p-4"><legend className="px-2 font-bold">Equipes</legend><p className="mb-3 text-sm text-[var(--muted)]">Marque uma ou várias. As equipes anteriores da pessoa serão mantidas.</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{departments?.map((department) => <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl bg-[var(--surface-soft)] px-4 font-semibold" key={department.id}><input className="h-5 w-5 accent-[var(--brand)]" name="departmentId" type="checkbox" value={department.id} />{department.name}</label>)}</div></fieldset>
-            <button className="min-h-12 rounded-xl bg-[#277ad8] px-5 font-semibold text-white"><UserRoundCheck className="mr-2 inline" size={18} />Adicionar às equipes selecionadas</button>
+            <button className="min-h-12 rounded-xl bg-[var(--church-brand)] px-5 font-semibold text-white"><UserRoundCheck className="mr-2 inline" size={18} />Adicionar às equipes selecionadas</button>
           </form>
         </section>
 

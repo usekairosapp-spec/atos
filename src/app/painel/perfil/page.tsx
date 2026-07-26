@@ -19,7 +19,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
   const message = await searchParams;
   return (
     <main className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
-      <p className="text-sm font-semibold uppercase tracking-[.15em] text-[#277ad8]">Sua conta</p><h1 className="mt-2 text-3xl font-bold">Perfil</h1>
+      <p className="text-sm font-semibold uppercase tracking-[.15em] text-[var(--church-brand)]">Sua conta</p><h1 className="mt-2 text-3xl font-bold">Perfil</h1>
       <AuthMessage {...message} />
       <form action={updateProfile} className="mt-8 rounded-[1.75rem] bg-white p-6 shadow-sm sm:p-8">
         <AvatarPicker currentAvatarUrl={viewer.profile.avatarUrl} />
@@ -34,7 +34,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
           </select>
           <span className="mt-1 block text-xs font-normal text-[#6b767d]">Usado para exibir os horários das escalas e sincronizar o Google Agenda. Padrão: Brasília.</span>
         </label>
-        <button className="mt-7 min-h-13 rounded-xl bg-[#277ad8] px-6 font-semibold text-white" type="submit">Salvar perfil</button>
+        <button className="mt-7 min-h-13 rounded-xl bg-[var(--church-brand)] px-6 font-semibold text-white" type="submit">Salvar perfil</button>
       </form>
       <InstallPwa />
       <form action={logout} className="mt-6">

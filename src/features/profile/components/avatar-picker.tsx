@@ -57,16 +57,16 @@ export function AvatarPicker({ currentAvatarUrl }: AvatarPickerProps) {
             <Cropper image={previewUrl} crop={crop} zoom={zoom} aspect={1} cropShape="round" showGrid onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={handleCropComplete} />
           </div>
           <label className="mt-4 flex items-center gap-3 text-sm font-medium text-white">Zoom
-            <input className="w-full accent-[#6ea8e8]" type="range" min={1} max={3} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} />
+            <input className="w-full accent-[var(--church-brand-light)]" type="range" min={1} max={3} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} />
           </label>
         </div>
       ) : null}
       <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-        <div className="relative h-28 w-28 overflow-hidden rounded-full bg-blue-100 text-[#277ad8] ring-4 ring-white shadow-md">
+        <div className="relative h-28 w-28 overflow-hidden rounded-full bg-[var(--church-brand-soft)] text-[var(--church-brand)] ring-4 ring-white shadow-md">
           {previewUrl ? <Image className="object-cover" src={previewUrl} alt="Prévia da foto de perfil" fill sizes="112px" unoptimized priority /> : <span className="grid h-full w-full place-items-center"><Camera size={36} /></span>}
         </div>
         <div>
-          <label className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-[#d7dee5] px-4 py-3 font-semibold text-[#277ad8] hover:bg-blue-50">
+          <label className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-[#d7dee5] px-4 py-3 font-semibold text-[var(--church-brand)] hover:bg-[var(--church-brand-softer)]">
             <RefreshCw size={18} /> {previewUrl ? "Trocar foto" : "Escolher foto"}
             <input className="sr-only" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" onChange={handleFile} />
           </label>
