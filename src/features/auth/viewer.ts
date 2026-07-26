@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { cache } from "react";
+import { resolveTimezone } from "@/shared/lib/timezone";
 
 export type ViewerRole = "admin" | "leader" | "member";
 
@@ -10,7 +11,7 @@ export const getViewerContext = cache(async function getViewerContext() {
   if (!user) return null;
 
   const [{ data: profile }, { data: platformRole }, { data: churchMemberships }, { data: departmentMemberships }] = await Promise.all([
-    supabase.from("profiles").select("full_name, avatar_path").eq("id", user.id).single(),
+    supabase.from("profiles").select("full_name, avatar_path, timezone").eq("id", user.id).single(),
     supabase.from("platform_roles").select("role").maybeSingle(),
     supabase.from("church_memberships").select("church_id, role, status").eq("user_id", user.id).eq("status", "active"),
     supabase.from("department_memberships").select("department_id, role, status").eq("user_id", user.id).eq("status", "active"),
@@ -47,7 +48,7 @@ export const getViewerContext = cache(async function getViewerContext() {
   return {
     user,
     role,
-    profile: { fullName: profile?.full_name || String(user.user_metadata.full_name ?? user.email ?? "Usuário"), avatarUrl },
+    profile: { fullName: profile?.full_name || String(user.user_metadata.full_name ?? user.email ?? "Usuário"), avatarUrl, timezone: resolveTimezone(profile?.timezone) },
     churchMemberships: churchMemberships ?? [],
     departmentMemberships: currentDepartmentMemberships,
     churches: churches ?? [],

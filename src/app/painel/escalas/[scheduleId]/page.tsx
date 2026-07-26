@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
 import { addAssignmentToGoogleCalendar } from "@/features/calendar/actions";
 import { PendingSubmitButton } from "@/shared/components/pending-submit-button";
+import { formatDate, formatTime } from "@/shared/lib/timezone";
 
 type PageProps = { params: Promise<{ scheduleId: string }>; searchParams: Promise<{ erro?: string; sucesso?: string; visao?: string }> };
 type TeamAssignment = {
@@ -48,13 +49,14 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
   const { data: calendarEvent } = ownAssignment ? await supabase.from("google_calendar_events").select("html_link").eq("assignment_id", ownAssignment.id).maybeSingle() : { data: null };
   const startsAt = new Date(service.starts_at);
   const endsAt = new Date(service.ends_at);
+  const tz = viewer.profile.timezone;
   const publishedTeam = canManage && schedule.status === "published" ? <section className="mt-6 rounded-[1.75rem] bg-white p-6 shadow-sm"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><Users className="text-[#277ad8]" /><h2 className="text-xl font-bold">Pessoas nesta escala</h2></div><span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-[#277ad8]">{assignments?.length ?? 0}</span></div><div className="mt-4 divide-y">{assignments?.map((assignment) => { const position = Array.isArray(assignment.positions) ? assignment.positions[0] : assignment.positions; const profile = Array.isArray(assignment.profiles) ? assignment.profiles[0] : assignment.profiles; const label = assignment.status === "confirmed" ? "Confirmado" : assignment.status === "replacement_requested" ? "Troca solicitada" : "Aguardando confirmação"; return <article className="flex items-center justify-between gap-4 py-4" key={`published-${assignment.id}`}><div><strong>{profile?.full_name ?? "Membro"}</strong><p className="text-sm text-[#6b767d]">{position?.name}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${assignment.status === "confirmed" ? "bg-emerald-100 text-emerald-700" : assignment.status === "replacement_requested" ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-700"}`}>{label}</span></article>; })}</div>{!assignments?.length ? <p className="mt-5 text-sm text-[#6b767d]">Nenhuma pessoa adicionada.</p> : null}</section> : null;
 
   return <main className="mx-auto max-w-5xl px-4 py-7 sm:px-8">
     <Link className="inline-flex min-h-11 items-center gap-2 font-semibold text-[#277ad8]" href={message.visao === "minhas" ? "/painel/escalas?visao=minhas" : "/painel/escalas"}><ArrowLeft size={18} /> Escalas</Link>
     <section className="mt-5 rounded-[1.75rem] bg-gradient-to-br from-[#186ab8] to-[#3588ec] p-6 text-white shadow-lg sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="font-semibold text-blue-200">{department.name}</p><h1 className="mt-1 text-3xl font-bold">{service.title}</h1></div><span className={`rounded-full px-3 py-1 text-sm font-semibold ${schedule.status === "published" ? "bg-emerald-300/25 text-emerald-100" : "bg-amber-300/25 text-amber-100"}`}>{schedule.status === "published" ? "Publicada" : "Rascunho"}</span></div>
-      <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3"><p className="flex items-center gap-2"><CalendarDays size={17} />{startsAt.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</p><p className="flex items-center gap-2"><Clock3 size={17} />{startsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às {endsAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>{service.location ? <p className="flex items-center gap-2"><MapPin size={17} />{service.location}</p> : null}</div>
+      <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3"><p className="flex items-center gap-2"><CalendarDays size={17} />{formatDate(startsAt, tz, { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</p><p className="flex items-center gap-2"><Clock3 size={17} />{formatTime(startsAt, tz, { hour: "2-digit", minute: "2-digit" })} às {formatTime(endsAt, tz, { hour: "2-digit", minute: "2-digit" })}</p>{service.location ? <p className="flex items-center gap-2"><MapPin size={17} />{service.location}</p> : null}</div>
       {service.notes ? <p className="mt-5 rounded-xl bg-white/10 p-4 text-sm">{service.notes}</p> : null}
     </section>
     <AuthMessage {...message} />

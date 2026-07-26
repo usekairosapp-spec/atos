@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { resolveTimezone, toZonedDateTimeString } from "@/shared/lib/timezone";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type GoogleEvent = { id?: string; htmlLink?: string };
@@ -18,22 +19,13 @@ function withMessage(next: string, kind: "erro" | "sucesso", message: string) {
   return `${next}${separator}${kind}=${encodeURIComponent(message)}`;
 }
 
-function brazilDateTime(value: string) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
-  }).formatToParts(new Date(value));
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
-}
-
-function googleEventPayload(event: Record<string, string | null>) {
+function googleEventPayload(event: Record<string, string | null>, timeZone: string) {
   return {
     summary: `${event.service_title} — ${event.department_name}`,
     location: event.service_location || undefined,
     description: [`Função: ${event.position_name}`, event.service_notes, "Adicionado pelo Kairos Escala."].filter(Boolean).join("\n\n"),
-    start: { dateTime: brazilDateTime(event.service_starts_at ?? ""), timeZone: "America/Sao_Paulo" },
-    end: { dateTime: brazilDateTime(event.service_ends_at ?? ""), timeZone: "America/Sao_Paulo" },
+    start: { dateTime: toZonedDateTimeString(event.service_starts_at ?? "", timeZone), timeZone },
+    end: { dateTime: toZonedDateTimeString(event.service_ends_at ?? "", timeZone), timeZone },
     reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 1440 }, { method: "popup", minutes: 120 }] },
     extendedProperties: { private: { appescalaAssignmentId: event.assignment_id } },
   };
@@ -134,12 +126,15 @@ export async function addAssignmentToGoogleCalendar(formData: FormData) {
   const providerToken = session.provider_token;
   if (!providerToken) return reconnectCalendar(next);
 
+  const { data: profile } = await supabase.from("profiles").select("timezone").eq("id", userData.user.id).single();
+  const timeZone = resolveTimezone(profile?.timezone);
+
   await processPendingCleanup(supabase, providerToken);
   const { data: lockToken, error: lockError } = await supabase.rpc("claim_my_google_calendar_sync", { target_assignment_id: parsed.data.assignmentId });
   if (lockError || !lockToken) redirect(withMessage(next, "erro", "Esta escala já está sendo sincronizada. Aguarde alguns instantes e tente novamente."));
 
   try {
-    const payload = googleEventPayload(event);
+    const payload = googleEventPayload(event, timeZone);
     const { data: stored } = await supabase.from("google_calendar_events").select("google_event_id").eq("assignment_id", parsed.data.assignmentId).maybeSingle();
     let existingId = stored?.google_event_id as string | undefined;
 

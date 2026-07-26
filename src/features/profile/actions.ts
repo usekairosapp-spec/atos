@@ -5,14 +5,25 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
+import { resolveTimezone } from "@/shared/lib/timezone";
+
+// Copia os bytes para um Uint8Array isolado: o buffer do sharp pode vir do pool
+// interno do Node, que em runtimes serverless as vezes e apoiado em
+// SharedArrayBuffer — e o fetch do supabase-js rejeita esse tipo de corpo no upload.
+function toPlainUint8Array(buffer: Buffer): Uint8Array {
+  const copy = new Uint8Array(buffer.length);
+  copy.set(buffer);
+  return copy;
+}
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Informe seu nome.").max(120),
   phone: z.string().trim().max(30).optional(),
+  timezone: z.string().trim().min(1).max(60),
 });
 
 export async function updateProfile(formData: FormData) {
-  const parsed = profileSchema.safeParse({ fullName: formData.get("fullName"), phone: formData.get("phone") });
+  const parsed = profileSchema.safeParse({ fullName: formData.get("fullName"), phone: formData.get("phone"), timezone: formData.get("timezone") });
   if (!parsed.success) redirect(`/painel/perfil?erro=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Dados inválidos.")}`);
 
   const supabase = await createClient();
@@ -26,7 +37,7 @@ export async function updateProfile(formData: FormData) {
     if (!allowedTypes.includes(avatar.type) || avatar.size > 5 * 1024 * 1024) {
       redirect("/painel/perfil?erro=A foto deve ser JPG, PNG ou WebP e ter no máximo 5 MB.");
     }
-    let optimizedAvatar: Buffer;
+    let optimizedAvatar: Uint8Array;
     try {
       const rotated = await sharp(Buffer.from(await avatar.arrayBuffer())).rotate().toBuffer({ resolveWithObject: true });
       const cropValues = ["cropX", "cropY", "cropWidth", "cropHeight"].map((key) => Number(formData.get(key)));
@@ -39,7 +50,7 @@ export async function updateProfile(formData: FormData) {
         const height = Math.max(1, Math.min(Math.floor(cropHeight), rotated.info.height - top));
         image = image.extract({ left, top, width, height });
       }
-      optimizedAvatar = await image.resize(800, 800, { fit: "cover", withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
+      optimizedAvatar = toPlainUint8Array(await image.resize(800, 800, { fit: "cover", withoutEnlargement: true }).webp({ quality: 82 }).toBuffer());
     } catch {
       redirect("/painel/perfil?erro=Não foi possível processar esta imagem.");
     }
@@ -48,9 +59,10 @@ export async function updateProfile(formData: FormData) {
     if (uploadError) redirect("/painel/perfil?erro=Não foi possível enviar a foto.");
   }
 
-  const updates: { full_name: string; phone?: string; avatar_path?: string } = {
+  const updates: { full_name: string; phone?: string; avatar_path?: string; timezone: string } = {
     full_name: parsed.data.fullName,
     phone: parsed.data.phone,
+    timezone: resolveTimezone(parsed.data.timezone),
   };
   if (avatarPath) updates.avatar_path = avatarPath;
   const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
