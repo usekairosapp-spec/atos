@@ -37,6 +37,19 @@ export default async function LandingPage() {
           <div className="mx-auto mt-8 flex max-w-lg flex-wrap justify-center gap-3 text-xs font-semibold text-white/80"><span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><CalendarCheck2 size={15} />Escalas simples</span><span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><ShieldCheck size={15} />Equipes organizadas</span></div>
         </div>
 
+        <section className="mx-auto mt-12 max-w-4xl rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur sm:p-10">
+          <h2 className="mb-4 text-2xl font-bold">O que é ATOS?</h2>
+          <p className="mb-4 text-violet-100">
+            ATOS é um gerenciador de escalas e equipes desenvolvido especificamente para igrejas. O aplicativo ajuda líderes a organizar os serviços, gerenciar equipes e garantir que todos os membros saibam seus horários e responsabilidades.
+          </p>
+          <ul className="space-y-2 text-violet-100">
+            <li>✓ Crie e gerencie escalas de serviço para seus setores</li>
+            <li>✓ Organize equipes e atribua responsabilidades</li>
+            <li>✓ Mantenha todos informados sobre seus horários</li>
+            <li>✓ Gerencie múltiplas igrejas e departamentos</li>
+          </ul>
+        </section>
+
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           <Link className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-white px-6 font-bold text-[#3f207e] shadow-lg transition hover:-translate-y-0.5" href="/entrar">
             Começar <ArrowRight size={20} aria-hidden="true" />
