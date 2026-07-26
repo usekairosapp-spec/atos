@@ -26,7 +26,7 @@ export default async function AnnouncementDetailPage({ params }: PageProps) {
   const scopeLabel = announcement.target_user_id ? "Mensagem direta para você" : departmentName ? `Setor: ${departmentName}` : "Toda a igreja";
   const date = new Date(announcement.created_at);
   const tz = viewer.profile.timezone ?? DEFAULT_TIMEZONE;
-  const canDelete = viewer.isChurchAdmin || announcement.created_by === viewer.user.id;
+  const canDelete = announcement.created_by === viewer.user.id;
 
   return <main className="mx-auto max-w-2xl px-5 py-8 sm:px-8">
     <Link className="inline-flex items-center gap-2 font-semibold text-[var(--church-brand)]" href="/painel/comunicados"><ArrowLeft size={18} /> Comunicados</Link>

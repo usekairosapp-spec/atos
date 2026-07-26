@@ -88,7 +88,7 @@ export default async function AnnouncementsPage({ searchParams }: PageProps) {
         const department = Array.isArray(item.departments) ? item.departments[0] : item.departments;
         const author = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
         const scopeLabel = item.target_user_id ? "Mensagem direta" : department?.name ? `Setor: ${department.name}` : "Toda a igreja";
-        const canDelete = isAdmin || item.created_by === viewer.user.id;
+        const canDelete = item.created_by === viewer.user.id;
         return <article className="rounded-[1.5rem] bg-white p-5 shadow-sm" key={item.id}>
           <Link className="block transition hover:opacity-80" href={`/painel/comunicados/${item.id}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
