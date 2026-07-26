@@ -107,3 +107,30 @@ export async function platformReviewMembership(formData: FormData) {
   revalidatePath("/central", "layout");
   redirect(`/central/solicitacoes?sucesso=${parsed.data.decision === "active" ? "Membro aprovado com sucesso." : "Solicitação recusada."}`);
 }
+
+export async function promoteToChurchAdmin(formData: FormData) {
+  const userId = z.string().uuid().safeParse(formData.get("userId"));
+  if (!userId.success) redirect("/central/igrejas?erro=Usuário inválido.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("platform_roles").insert({
+    user_id: userId.data,
+    role: "church_admin",
+  });
+  if (error && error.code !== "23505") redirect(`/central/igrejas?erro=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/central/igrejas", "layout");
+  redirect("/central/igrejas?sucesso=Pessoa promovida a administradora da igreja.");
+}
+
+export async function removeChurchAdmin(formData: FormData) {
+  const userId = z.string().uuid().safeParse(formData.get("userId"));
+  if (!userId.success) redirect("/central/igrejas?erro=Usuário inválido.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("platform_roles").delete().eq("user_id", userId.data).eq("role", "church_admin");
+  if (error) redirect(`/central/igrejas?erro=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/central/igrejas", "layout");
+  redirect("/central/igrejas?sucesso=Permissão de administradora removida.");
+}
