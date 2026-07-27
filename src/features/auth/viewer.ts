@@ -29,21 +29,24 @@ export const getViewerContext = cache(async function getViewerContext() {
 
 
   const currentChurchMembership = churchMemberships?.find((item) => item.church_id === currentChurch?.id);
-  const { data: currentDepartments } = currentChurch
-    ? await supabase.from("departments").select("id").eq("church_id", currentChurch.id)
-    : { data: [] as { id: string }[] };
+  // As duas buscas abaixo nao dependem uma da outra (uma so precisa da igreja
+  // atual, a outra so do avatar do perfil) — rodar em paralelo evita que toda
+  // navegacao pague o custo de mais uma viagem de rede sequencial.
+  const [{ data: currentDepartments }, avatarUrl] = await Promise.all([
+    currentChurch
+      ? supabase.from("departments").select("id").eq("church_id", currentChurch.id)
+      : Promise.resolve({ data: [] as { id: string }[] }),
+    profile?.avatar_path
+      ? supabase.storage.from("avatars").createSignedUrl(profile.avatar_path, 3600).then(({ data }) => data?.signedUrl ?? null)
+      : Promise.resolve(null as string | null),
+  ]);
   const currentDepartmentIds = new Set(currentDepartments?.map((item) => item.id) ?? []);
   const currentDepartmentMemberships = departmentMemberships?.filter((item) => currentDepartmentIds.has(item.department_id)) ?? [];
   const isAdmin = Boolean(platformRole) || currentChurchMembership?.role === "church_admin";
   const isLeader = currentDepartmentMemberships.some((item) => item.role === "leader");
   const role: ViewerRole = isAdmin ? "admin" : isLeader ? "leader" : "member";
-  let avatarUrl: string | null = null;
   const churchLogoUrl = currentChurch?.logo_path ? supabase.storage.from("church-branding").getPublicUrl(currentChurch.logo_path).data.publicUrl : null;
   const churchCoverUrl = currentChurch?.cover_path ? supabase.storage.from("church-branding").getPublicUrl(currentChurch.cover_path).data.publicUrl : null;
-  if (profile?.avatar_path) {
-    const { data } = await supabase.storage.from("avatars").createSignedUrl(profile.avatar_path, 3600);
-    avatarUrl = data?.signedUrl ?? null;
-  }
 
   return {
     user,

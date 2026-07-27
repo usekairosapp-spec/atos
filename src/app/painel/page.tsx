@@ -15,12 +15,12 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const viewer = await getViewerContext();
   if (!viewer) redirect("/entrar");
 
-  const [{ data: memberships }, { data: platformRole }, { data: ownAssignments }, message] = await Promise.all([
+  const [{ data: memberships }, { data: ownAssignments }, message] = await Promise.all([
     supabase.from("church_memberships").select("church_id, role, status"),
-    supabase.from("platform_roles").select("role").maybeSingle(),
     supabase.from("schedule_assignments").select("id, status, positions(name), department_schedules!inner(id, status, services(title, starts_at, ends_at), departments(name))").eq("user_id", viewer.user.id),
     searchParams,
   ]);
+  const platformRole = viewer.isPlatformAdmin;
   const churchIds = memberships?.filter((membership) => membership.status === "active").map((membership) => membership.church_id) ?? [];
   const hasPendingMembership = memberships?.some((membership) => membership.status === "pending") ?? false;
   const firstName = viewer.profile.fullName.split(" ")[0];
