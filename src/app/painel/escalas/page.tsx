@@ -3,6 +3,7 @@ import { CalendarDays, Plus } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
+import { ScheduleSelectableList, type ScheduleCardData } from "@/features/schedules/components/schedule-selectable-list";
 import { DEFAULT_TIMEZONE, formatDate, formatTime } from "@/shared/lib/timezone";
 
 type PageProps = { searchParams: Promise<{ erro?: string; sucesso?: string; aba?: string; visao?: string }> };
@@ -53,7 +54,32 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
   return <main className="mx-auto max-w-4xl px-4 py-7 sm:px-8"><div className="flex items-center justify-between gap-4"><h1 className="text-3xl font-bold">{view === "minhas" ? "Minhas escalas" : "Escalas do setor"}</h1>{canManageSchedules && view === "setor" ? <div className="flex items-center gap-2"><Link className="flex min-h-12 items-center justify-center rounded-full border border-[var(--church-brand)] px-4 text-sm font-semibold text-[var(--church-brand)]" href="/painel/escalas/lote">Criar em lote</Link><Link aria-label="Nova escala" className="grid h-12 w-12 place-items-center rounded-full bg-[var(--church-brand)] text-white shadow-lg" href="/painel/escalas/nova"><Plus /></Link></div> : null}</div><AuthMessage {...message} />
     {leaderView ? <nav className="mt-7 grid grid-cols-2 rounded-2xl bg-white p-1 shadow-sm"><Link className={`rounded-xl px-3 py-3 text-center font-semibold ${view === "setor" ? "bg-[var(--church-brand)] text-white" : "text-[#6b767d]"}`} href="/painel/escalas">Escalas do setor</Link><Link className={`rounded-xl px-3 py-3 text-center font-semibold ${view === "minhas" ? "bg-[var(--church-brand)] text-white" : "text-[#6b767d]"}`} href="/painel/escalas?visao=minhas">Minhas escalas</Link></nav> : null}
     <nav className="mt-7 grid grid-cols-2 border-b border-[#d7dee7]"><Link className={`pb-4 text-center font-semibold ${tab === "proximas" ? "border-b-2 border-[var(--church-brand)] text-[var(--church-brand)]" : "text-[#717880]"}`} href={`/painel/escalas${viewQuery ? `?${viewQuery}` : ""}`}>Próximas</Link><Link className={`pb-4 text-center font-semibold ${tab === "historico" ? "border-b-2 border-[var(--church-brand)] text-[var(--church-brand)]" : "text-[#717880]"}`} href={`/painel/escalas?${viewQuery ? `${viewQuery}&` : ""}aba=historico`}>Histórico</Link></nav>
-    <section className="mt-6 space-y-4">{visible.map((schedule) => { const service = Array.isArray(schedule.services) ? schedule.services[0] : schedule.services; const department = Array.isArray(schedule.departments) ? schedule.departments[0] : schedule.departments; if (!service) return null; const date = new Date(service.starts_at); const myAssignment = assignments?.find((item) => item.department_schedule_id === schedule.id && item.user_id === viewer?.user.id); const position = Array.isArray(myAssignment?.positions) ? myAssignment.positions[0] : myAssignment?.positions; const status = myAssignment?.status ?? schedule.status; const label = status === "confirmed" ? "Confirmado" : status === "replacement_requested" ? "Troca solicitada" : status === "published" && viewer?.role !== "member" ? "Publicada" : status === "draft" ? "Rascunho" : "Pendente"; return <Link className="grid grid-cols-[5.5rem_1fr] overflow-hidden rounded-[1.5rem] bg-white shadow-sm transition hover:-translate-y-0.5" href={`/painel/escalas/${schedule.id}${view === "minhas" ? "?visao=minhas" : ""}`} key={schedule.id}><div className="grid place-content-center border-r border-[#eaeef3] p-4 text-center"><strong className="text-4xl font-medium">{formatDate(date, tz, { day: "2-digit" })}</strong><span className="mt-1 font-semibold uppercase text-[#50585f]">{formatDate(date, tz, { month: "short" }).replace(".", "")}</span></div><div className="p-5"><p className="text-sm text-[#6b767d]">{formatDate(date, tz, { weekday: "long" })} · {formatTime(date, tz, { hour: "2-digit", minute: "2-digit" })}</p><strong className="mt-1 block text-lg">{department?.name}</strong><p className="mt-1 text-[#50585f]">{position?.name ?? service.title}</p><span className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold ${label === "Confirmado" ? "bg-emerald-100 text-emerald-700" : label === "Troca solicitada" ? "bg-amber-100 text-amber-700" : "bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]"}`}>{label}</span></div></Link>; })}</section>
+    <div className="mt-6">
+      {(() => {
+        const cards: ScheduleCardData[] = visible.map((schedule) => {
+          const service = Array.isArray(schedule.services) ? schedule.services[0] : schedule.services;
+          const department = Array.isArray(schedule.departments) ? schedule.departments[0] : schedule.departments;
+          const date = new Date(service!.starts_at);
+          const myAssignment = assignments?.find((item) => item.department_schedule_id === schedule.id && item.user_id === viewer?.user.id);
+          const position = Array.isArray(myAssignment?.positions) ? myAssignment.positions[0] : myAssignment?.positions;
+          const status = myAssignment?.status ?? schedule.status;
+          const label = status === "confirmed" ? "Confirmado" : status === "replacement_requested" ? "Troca solicitada" : status === "published" && viewer?.role !== "member" ? "Publicada" : status === "draft" ? "Rascunho" : "Pendente";
+          const labelClass = label === "Confirmado" ? "bg-emerald-100 text-emerald-700" : label === "Troca solicitada" ? "bg-amber-100 text-amber-700" : "bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]";
+          return {
+            id: schedule.id,
+            href: `/painel/escalas/${schedule.id}${view === "minhas" ? "?visao=minhas" : ""}`,
+            day: formatDate(date, tz, { day: "2-digit" }),
+            month: formatDate(date, tz, { month: "short" }).replace(".", ""),
+            weekdayTime: `${formatDate(date, tz, { weekday: "long" })} · ${formatTime(date, tz, { hour: "2-digit", minute: "2-digit" })}`,
+            departmentName: department?.name ?? "",
+            subtitle: position?.name ?? service!.title,
+            label,
+            labelClass,
+          };
+        });
+        return <ScheduleSelectableList canSelect={canManageSchedules && view === "setor"} schedules={cards} />;
+      })()}
+    </div>
     {!visible.length ? <div className="mt-10 rounded-3xl border border-dashed border-[#c6d0dc] bg-white p-10 text-center"><CalendarDays className="mx-auto text-[var(--church-brand)]" size={36} /><p className="mt-4 font-semibold">Nenhuma escala {tab === "proximas" ? "próxima" : "no histórico"}.</p></div> : null}
   </main>;
 }

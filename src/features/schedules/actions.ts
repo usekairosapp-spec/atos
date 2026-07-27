@@ -237,3 +237,28 @@ export async function deleteSchedule(formData: FormData) {
   revalidatePath("/painel/escalas"); revalidatePath("/painel");
   redirect("/painel/escalas?sucesso=Escala excluída.");
 }
+
+const scheduleIdsSchema = z.array(z.string().uuid()).min(1, "Selecione pelo menos uma escala.");
+
+export async function deleteSchedulesBatch(formData: FormData) {
+  const parsed = scheduleIdsSchema.safeParse(formData.getAll("scheduleIds"));
+  if (!parsed.success) redirect(`/painel/escalas?erro=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Seleção inválida.")}`);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_schedules_batch", { target_schedule_ids: parsed.data });
+  if (error) redirect(`/painel/escalas?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath("/painel/escalas");
+  revalidatePath("/painel", "layout");
+  redirect(`/painel/escalas?sucesso=${encodeURIComponent(`${parsed.data.length} ${parsed.data.length === 1 ? "escala excluída" : "escalas excluídas"}.`)}`);
+}
+
+export async function replicateSchedulesToNextMonth(formData: FormData) {
+  const parsed = scheduleIdsSchema.safeParse(formData.getAll("scheduleIds"));
+  if (!parsed.success) redirect(`/painel/escalas?erro=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Seleção inválida.")}`);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("replicate_schedules_to_next_month", { target_schedule_ids: parsed.data });
+  if (error) redirect(`/painel/escalas?erro=${encodeURIComponent(error.message)}`);
+  const batchId = data?.[0]?.batch_id;
+  if (!batchId) redirect("/painel/escalas?erro=Não foi possível replicar as escalas selecionadas.");
+  revalidatePath("/painel/escalas");
+  redirect(`/painel/escalas/lote/revisar/${batchId}`);
+}
