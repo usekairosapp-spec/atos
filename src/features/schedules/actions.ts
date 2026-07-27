@@ -70,10 +70,21 @@ export async function createSchedulesBatch(formData: FormData) {
   });
   if (error) redirect(withError(error.message));
 
+  const batchId = data?.[0]?.batch_id;
+  if (!batchId) redirect(withError("Não foi possível montar o lote."));
+  revalidatePath("/painel/escalas");
+  redirect(`/painel/escalas/lote/revisar/${batchId}`);
+}
+
+export async function publishScheduleBatch(formData: FormData) {
+  const batchId = z.string().uuid().safeParse(formData.get("batchId"));
+  if (!batchId.success) redirect("/painel/escalas?erro=Lote inválido.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("publish_schedule_batch", { target_batch_id: batchId.data });
+  if (error) redirect(`/painel/escalas/lote/revisar/${batchId.data}?erro=${encodeURIComponent(error.message)}`);
   revalidatePath("/painel/escalas");
   revalidatePath("/painel", "layout");
-  const count = data?.length ?? parsed.data.dates.length * parsed.data.services.length;
-  redirect(`/painel/escalas?sucesso=${encodeURIComponent(`${count} ${count === 1 ? "escala criada e publicada" : "escalas criadas e publicadas"}.`)}`);
+  redirect(`/painel/escalas?sucesso=${encodeURIComponent("Escalas do lote publicadas.")}`);
 }
 
 export async function createSchedule(formData: FormData) {
