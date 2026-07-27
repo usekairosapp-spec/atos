@@ -66,7 +66,7 @@ function SwapPanel({ assignment, personName, onDone }: { assignment: PersonAssig
         {candidate.hasConflict ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">já tem escala</span> : null}
       </label>)}
     </div>
-    {selected?.hasConflict ? <p className="mt-2 rounded-lg bg-amber-100 p-2 text-xs text-amber-900">⚠️ {selected.name} já está escalado(a) em outro compromisso nesse mesmo horário{selected.conflictLabel ? ` (${selected.conflictLabel})` : ""}. Tem certeza que quer trocar mesmo assim?</p> : null}
+    {selected?.hasConflict ? <p className="mt-2 rounded-lg bg-amber-100 p-2 text-xs text-amber-900">⚠️ {selected.name} {selected.conflictLabel ?? "já tem outro compromisso nesse horário"}. Tem certeza que quer trocar mesmo assim?</p> : null}
     {selected ? <button className={`mt-2 flex min-h-9 w-full items-center justify-center rounded-lg text-xs font-bold text-white disabled:opacity-60 ${selected.hasConflict ? "bg-amber-700" : "bg-[var(--church-brand)]"}`} disabled={isPending} onClick={confirm} type="button">{isPending ? "Trocando..." : selected.hasConflict ? "Confirmar mesmo assim" : `Confirmar troca com ${selected.name}`}</button> : null}
     <button className="mt-2 w-full text-center text-xs font-semibold text-[#6b767d]" onClick={onDone} type="button">Cancelar</button>
   </div>;
