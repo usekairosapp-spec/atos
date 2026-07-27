@@ -49,9 +49,12 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
   const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-  const previousMonthStart = new Date(previousMonthDate.getFullYear(), previousMonthDate.getMonth(), 1).toISOString();
-  const currentMonthStart = new Date(currentYear, currentMonth, 1).toISOString();
-  const nextMonthStart = new Date(currentYear, currentMonth + 1, 1).toISOString();
+  // Usa Date.UTC explicitamente (em vez do construtor local) para nao depender
+  // do fuso horario do servidor ao delimitar os meses — mesma convencao do
+  // resto do app (ex.: painel/calendario/page.tsx).
+  const previousMonthStart = new Date(Date.UTC(previousMonthDate.getFullYear(), previousMonthDate.getMonth(), 1)).toISOString();
+  const currentMonthStart = new Date(Date.UTC(currentYear, currentMonth, 1)).toISOString();
+  const nextMonthStart = new Date(Date.UTC(currentYear, currentMonth + 1, 1)).toISOString();
 
   const [{ data: positions }, { data: members }, { data: previousSchedules }, { data: currentMonthSchedules }] = await Promise.all([
     supabase.from("positions").select("id, name").eq("department_id", departmentId).eq("active", true).order("name"),
@@ -106,11 +109,11 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
           <div>
             <p className="font-bold text-[var(--church-brand-on-soft)]">Padrão detectado</p>
             <p className="mt-1 text-sm text-[var(--church-brand-on-soft)]">
-              {previousMonthLabel} teve {pattern.occurrences} {pattern.weekdayLabel}s às {pattern.startTime}, com a mesma equipe. Repetir em {currentMonthLabel} ({suggestedDates.length} {suggestedDates.length === 1 ? "data" : "datas"})?
+              {previousMonthLabel} teve {pattern.occurrences} {pattern.weekdayLabelPlural} às {pattern.startTime}, com a mesma equipe. Repetir em {currentMonthLabel} ({suggestedDates.length} {suggestedDates.length === 1 ? "data" : "datas"})?
             </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <Link className="min-h-12 flex-1 rounded-xl bg-[var(--church-brand)] px-5 text-center font-semibold leading-[3rem] text-white" href={`/painel/escalas/lote?departmentId=${departmentId}&replicate=1`}>Replicar mês ({suggestedDates.length} datas)</Link>
-              <Link className="min-h-12 flex-1 rounded-xl border border-[var(--church-brand)] px-5 text-center font-semibold leading-[3rem] text-[var(--church-brand)]" href={`/painel/escalas/lote?departmentId=${departmentId}`}>Selecionar manualmente</Link>
+              <Link className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-[var(--church-brand)] px-5 text-center font-semibold text-white" href={`/painel/escalas/lote?departmentId=${departmentId}&replicate=1`}>Replicar mês ({suggestedDates.length} datas)</Link>
+              <Link className="flex min-h-12 flex-1 items-center justify-center rounded-xl border border-[var(--church-brand)] px-5 text-center font-semibold text-[var(--church-brand)]" href={`/painel/escalas/lote?departmentId=${departmentId}`}>Selecionar manualmente</Link>
             </div>
           </div>
         </div>
@@ -123,7 +126,7 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
       </div>
     ) : null}
 
-    <form action={createSchedulesBatch} className="mt-8 grid gap-6">
+    <form action={createSchedulesBatch} className="mt-8 grid gap-6" key={applyReplication ? "replicate" : "manual"}>
       <input name="departmentId" type="hidden" value={departmentId} />
 
       <section className="rounded-[1.75rem] bg-white p-6 shadow-sm">

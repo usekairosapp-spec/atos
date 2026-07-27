@@ -32,6 +32,12 @@ const batchScheduleSchema = z.object({
 });
 
 export async function createSchedulesBatch(formData: FormData) {
+  const departmentIdRaw = formData.get("departmentId");
+  const backTo = typeof departmentIdRaw === "string" && departmentIdRaw
+    ? `/painel/escalas/lote?departmentId=${encodeURIComponent(departmentIdRaw)}`
+    : "/painel/escalas/lote";
+  const withError = (msg: string) => `${backTo}${backTo.includes("?") ? "&" : "?"}erro=${encodeURIComponent(msg)}`;
+
   const rawSelections = formData.getAll("selection").map(String).map((value) => {
     const [positionId, userId] = value.split("|");
     return { positionId, userId };
@@ -46,7 +52,7 @@ export async function createSchedulesBatch(formData: FormData) {
     notes: formData.get("notes"),
     selections: rawSelections,
   });
-  if (!parsed.success) redirect(`/painel/escalas/lote?erro=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Dados inválidos.")}`);
+  if (!parsed.success) redirect(withError(parsed.error.issues[0]?.message ?? "Dados inválidos."));
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_department_schedules_batch", {
@@ -59,7 +65,7 @@ export async function createSchedulesBatch(formData: FormData) {
     schedule_notes: parsed.data.notes,
     target_assignments: parsed.data.selections,
   });
-  if (error) redirect(`/painel/escalas/lote?erro=${encodeURIComponent(error.message)}`);
+  if (error) redirect(withError(error.message));
 
   revalidatePath("/painel/escalas");
   revalidatePath("/painel", "layout");

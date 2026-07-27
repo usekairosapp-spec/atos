@@ -1,10 +1,13 @@
 const WEEKDAY_NAMES = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+// Plural correto em portugues: "segunda-feira" -> "segundas-feiras" (nao "segunda-feiras").
+const WEEKDAY_NAMES_PLURAL = ["domingos", "segundas-feiras", "terças-feiras", "quartas-feiras", "quintas-feiras", "sextas-feiras", "sábados"];
 
 export type PatternAssignment = { positionId: string; userId: string };
 
 export type MonthlySchedulePattern = {
   weekday: number;
   weekdayLabel: string;
+  weekdayLabelPlural: string;
   startTime: string;
   endTime: string;
   title: string;
@@ -79,6 +82,7 @@ export function detectMonthlyPattern(schedules: SourceSchedule[]): MonthlySchedu
   return {
     weekday: latest.weekday,
     weekdayLabel: WEEKDAY_NAMES[latest.weekday],
+    weekdayLabelPlural: WEEKDAY_NAMES_PLURAL[latest.weekday],
     startTime: latest.startTime,
     endTime: latest.endTime,
     title: latest.title,
