@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
 import { createSchedulesBatch } from "@/features/schedules/actions";
 import { MonthDayPicker } from "@/features/schedules/components/month-day-picker";
+import { datesForWeekdayInMonth, detectMonthlyPattern, toSourceSchedule } from "@/features/schedules/lib/detect-pattern";
 import { PendingSubmitButton } from "@/shared/components/pending-submit-button";
 import { createClient } from "@/lib/supabase/server";
 import { AuthMessage } from "@/shared/components/auth-message";
 
-type PageProps = { searchParams: Promise<{ erro?: string; sucesso?: string; departmentId?: string }> };
+type PageProps = { searchParams: Promise<{ erro?: string; sucesso?: string; departmentId?: string; replicate?: string }> };
 type ProfileRelation = { full_name: string } | { full_name: string }[] | null;
+type ServiceRelation = { title: string; starts_at: string; ends_at: string; location: string | null; notes: string | null } | { title: string; starts_at: string; ends_at: string; location: string | null; notes: string | null }[] | null;
 
 export default async function BatchSchedulePage({ searchParams }: PageProps) {
   const [viewer, message] = await Promise.all([getViewerContext(), searchParams]);
@@ -43,14 +45,52 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
     </main>;
   }
 
-  const [{ data: positions }, { data: members }] = await Promise.all([
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
+  const previousMonthStart = new Date(previousMonthDate.getFullYear(), previousMonthDate.getMonth(), 1).toISOString();
+  const currentMonthStart = new Date(currentYear, currentMonth, 1).toISOString();
+  const nextMonthStart = new Date(currentYear, currentMonth + 1, 1).toISOString();
+
+  const [{ data: positions }, { data: members }, { data: previousSchedules }, { data: currentMonthSchedules }] = await Promise.all([
     supabase.from("positions").select("id, name").eq("department_id", departmentId).eq("active", true).order("name"),
     viewer.isChurchAdmin
       ? supabase.from("church_memberships").select("user_id, profiles!church_memberships_user_id_fkey(full_name)").eq("church_id", viewer.currentChurch.id).eq("status", "active")
       : supabase.from("department_memberships").select("user_id, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", departmentId).eq("status", "active"),
+    supabase.from("department_schedules")
+      .select("id, services!inner(title, starts_at, ends_at, location, notes), schedule_assignments(position_id, user_id)")
+      .eq("department_id", departmentId).eq("status", "published")
+      .gte("services.starts_at", previousMonthStart).lt("services.starts_at", currentMonthStart),
+    supabase.from("department_schedules")
+      .select("id, services!inner(starts_at)")
+      .eq("department_id", departmentId)
+      .gte("services.starts_at", currentMonthStart).lt("services.starts_at", nextMonthStart),
   ]);
 
-  const today = new Date();
+  const sourceSchedules = (previousSchedules ?? []).map((row) => {
+    const service = row.services as ServiceRelation;
+    const s = Array.isArray(service) ? service[0] : service;
+    const assignments = (row.schedule_assignments ?? []).map((a: { position_id: string; user_id: string }) => ({ positionId: a.position_id, userId: a.user_id }));
+    return toSourceSchedule({ startsAt: s!.starts_at, endsAt: s!.ends_at, title: s!.title, location: s!.location, notes: s!.notes, assignments });
+  });
+  const pattern = detectMonthlyPattern(sourceSchedules);
+
+  const alreadyScheduledDates = new Set((currentMonthSchedules ?? []).map((row) => {
+    const service = row.services as ServiceRelation;
+    const s = Array.isArray(service) ? service[0] : service;
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(s!.starts_at));
+  }));
+
+  const suggestedDates = pattern ? datesForWeekdayInMonth(currentYear, currentMonth, pattern.weekday).filter((d) => !alreadyScheduledDates.has(d)) : [];
+  const showSuggestion = pattern !== null && suggestedDates.length > 0 && message.replicate !== "1";
+  const applyReplication = pattern !== null && suggestedDates.length > 0 && message.replicate === "1";
+
+  const currentMonthLabel = today.toLocaleDateString("pt-BR", { month: "long" });
+  const previousMonthLabel = previousMonthDate.toLocaleDateString("pt-BR", { month: "long" });
+
+  const assignmentKey = (positionId: string, userId: string) => `${positionId}|${userId}`;
+  const preselectedAssignments = new Set(applyReplication && pattern ? pattern.assignments.map((a) => assignmentKey(a.positionId, a.userId)) : []);
 
   return <main className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
     <Link className="inline-flex items-center gap-2 font-semibold text-[var(--church-brand)]" href="/painel/escalas"><ArrowLeft size={18} /> Escalas</Link>
@@ -59,23 +99,47 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
     <p className="mt-2 text-[#6b767d]">Marque todos os dias que vão ter culto neste mês. O horário, local e a equipe serão aplicados a todos eles — cada um chega para a equipe como uma escala publicada normalmente.</p>
     <AuthMessage {...message} />
 
+    {showSuggestion && pattern ? (
+      <section className="mt-6 rounded-[1.75rem] bg-[var(--church-brand-soft)] p-6">
+        <div className="flex items-start gap-3">
+          <Sparkles className="mt-1 shrink-0 text-[var(--church-brand)]" size={22} />
+          <div>
+            <p className="font-bold text-[var(--church-brand-on-soft)]">Padrão detectado</p>
+            <p className="mt-1 text-sm text-[var(--church-brand-on-soft)]">
+              {previousMonthLabel} teve {pattern.occurrences} {pattern.weekdayLabel}s às {pattern.startTime}, com a mesma equipe. Repetir em {currentMonthLabel} ({suggestedDates.length} {suggestedDates.length === 1 ? "data" : "datas"})?
+            </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Link className="min-h-12 flex-1 rounded-xl bg-[var(--church-brand)] px-5 text-center font-semibold leading-[3rem] text-white" href={`/painel/escalas/lote?departmentId=${departmentId}&replicate=1`}>Replicar mês ({suggestedDates.length} datas)</Link>
+              <Link className="min-h-12 flex-1 rounded-xl border border-[var(--church-brand)] px-5 text-center font-semibold leading-[3rem] text-[var(--church-brand)]" href={`/painel/escalas/lote?departmentId=${departmentId}`}>Selecionar manualmente</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    ) : null}
+
+    {applyReplication && pattern ? (
+      <div className="mt-6 flex items-center gap-2 rounded-xl bg-[var(--church-brand-soft)] px-4 py-3 text-sm font-semibold text-[var(--church-brand-on-soft)]">
+        <Sparkles size={16} /> Replicando o padrão de {previousMonthLabel} — revise antes de confirmar.
+      </div>
+    ) : null}
+
     <form action={createSchedulesBatch} className="mt-8 grid gap-6">
       <input name="departmentId" type="hidden" value={departmentId} />
 
       <section className="rounded-[1.75rem] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold">1. Dias do mês</h2>
         <div className="mt-4">
-          <MonthDayPicker initialMonth={today.getMonth()} initialYear={today.getFullYear()} />
+          <MonthDayPicker initialMonth={currentMonth} initialSelectedDates={applyReplication ? suggestedDates : undefined} initialYear={currentYear} />
         </div>
       </section>
 
       <section className="grid gap-5 rounded-[1.75rem] bg-white p-6 shadow-sm sm:grid-cols-2">
         <h2 className="text-lg font-bold sm:col-span-2">2. Dados do culto</h2>
-        <label className="font-semibold sm:col-span-2">Nome do evento<input className={inputClass} name="title" placeholder="Ex.: Culto de domingo" required /></label>
-        <label className="font-semibold">Horário de início<input className={inputClass} name="startTime" type="time" required /></label>
-        <label className="font-semibold">Horário de término<input className={inputClass} name="endTime" type="time" required /></label>
-        <label className="font-semibold sm:col-span-2">Local<input className={inputClass} name="location" placeholder="Ex.: Templo principal" /></label>
-        <label className="font-semibold sm:col-span-2">Observações<textarea className={`${inputClass} min-h-24 py-3`} name="notes" placeholder="Orientações para a equipe" /></label>
+        <label className="font-semibold sm:col-span-2">Nome do evento<input className={inputClass} defaultValue={applyReplication ? pattern?.title : undefined} name="title" placeholder="Ex.: Culto de domingo" required /></label>
+        <label className="font-semibold">Horário de início<input className={inputClass} defaultValue={applyReplication ? pattern?.startTime : undefined} name="startTime" type="time" required /></label>
+        <label className="font-semibold">Horário de término<input className={inputClass} defaultValue={applyReplication ? pattern?.endTime : undefined} name="endTime" type="time" required /></label>
+        <label className="font-semibold sm:col-span-2">Local<input className={inputClass} defaultValue={applyReplication ? pattern?.location ?? "" : undefined} name="location" placeholder="Ex.: Templo principal" /></label>
+        <label className="font-semibold sm:col-span-2">Observações<textarea className={`${inputClass} min-h-24 py-3`} defaultValue={applyReplication ? pattern?.notes ?? "" : undefined} name="notes" placeholder="Orientações para a equipe" /></label>
       </section>
 
       <section className="rounded-[1.75rem] bg-white p-6 shadow-sm">
@@ -87,8 +151,9 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
               {members?.map((item) => {
                 const profile = item.profiles as ProfileRelation;
                 const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
+                const key = assignmentKey(position.id, item.user_id);
                 return <label className="flex min-h-11 items-center gap-3 rounded-xl bg-[#f6f8fb] px-3 text-gray-900 dark:bg-[#273136] dark:text-white" key={item.user_id}>
-                  <input className="h-5 w-5 accent-[var(--church-brand)]" name="selection" type="checkbox" value={`${position.id}|${item.user_id}`} />
+                  <input className="h-5 w-5 accent-[var(--church-brand)]" defaultChecked={preselectedAssignments.has(key)} name="selection" type="checkbox" value={key} />
                   <span>{name ?? "Membro"}</span>
                 </label>;
               })}

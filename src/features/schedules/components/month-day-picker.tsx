@@ -9,9 +9,9 @@ function isoDate(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-export function MonthDayPicker({ initialYear, initialMonth }: { initialYear: number; initialMonth: number }) {
+export function MonthDayPicker({ initialYear, initialMonth, initialSelectedDates }: { initialYear: number; initialMonth: number; initialSelectedDates?: string[] }) {
   const [cursor, setCursor] = useState({ year: initialYear, month: initialMonth });
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelectedDates ?? []));
 
   const cells = useMemo(() => {
     const first = new Date(cursor.year, cursor.month, 1);
