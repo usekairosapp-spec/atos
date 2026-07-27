@@ -4,6 +4,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
 import { createSchedulesBatch } from "@/features/schedules/actions";
 import { MonthDayPicker } from "@/features/schedules/components/month-day-picker";
+import { ServiceBlocksForm } from "@/features/schedules/components/service-blocks-form";
 import { datesForWeekdayInMonth, detectMonthlyPattern, toSourceSchedule } from "@/features/schedules/lib/detect-pattern";
 import { PendingSubmitButton } from "@/shared/components/pending-submit-button";
 import { createClient } from "@/lib/supabase/server";
@@ -21,8 +22,6 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const departmentsQuery = supabase.from("departments").select("id, name").eq("church_id", viewer.currentChurch.id).eq("active", true).order("name");
   const { data: departments } = leaderDepartmentIds.length > 0 ? await departmentsQuery.in("id", leaderDepartmentIds) : await departmentsQuery;
-
-  const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-[#d7dee7] bg-white px-4 text-gray-900 outline-none focus:border-[var(--church-brand)] dark:bg-[#273136] dark:text-white dark:border-[#353e49]";
 
   const departmentId = message.departmentId && departments?.some((item) => item.id === message.departmentId)
     ? message.departmentId
@@ -92,8 +91,20 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
   const currentMonthLabel = today.toLocaleDateString("pt-BR", { month: "long" });
   const previousMonthLabel = previousMonthDate.toLocaleDateString("pt-BR", { month: "long" });
 
-  const assignmentKey = (positionId: string, userId: string) => `${positionId}|${userId}`;
-  const preselectedAssignments = new Set(applyReplication && pattern ? pattern.assignments.map((a) => assignmentKey(a.positionId, a.userId)) : []);
+  const memberOptions = (members ?? []).map((item) => {
+    const profile = item.profiles as ProfileRelation;
+    const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
+    return { userId: item.user_id, name: name ?? "Membro" };
+  });
+
+  const initialBlock = applyReplication && pattern ? {
+    title: pattern.title,
+    startTime: pattern.startTime,
+    endTime: pattern.endTime,
+    location: pattern.location ?? "",
+    notes: pattern.notes ?? "",
+    selected: pattern.assignments.map((a) => `${a.positionId}|${a.userId}`),
+  } : undefined;
 
   return <main className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
     <Link className="inline-flex items-center gap-2 font-semibold text-[var(--church-brand)]" href="/painel/escalas"><ArrowLeft size={18} /> Escalas</Link>
@@ -136,35 +147,7 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section className="grid gap-5 rounded-[1.75rem] bg-white p-6 shadow-sm sm:grid-cols-2">
-        <h2 className="text-lg font-bold sm:col-span-2">2. Dados do culto</h2>
-        <label className="font-semibold sm:col-span-2">Nome do evento<input className={inputClass} defaultValue={applyReplication ? pattern?.title : undefined} name="title" placeholder="Ex.: Culto de domingo" required /></label>
-        <label className="font-semibold">Horário de início<input className={inputClass} defaultValue={applyReplication ? pattern?.startTime : undefined} name="startTime" type="time" required /></label>
-        <label className="font-semibold">Horário de término<input className={inputClass} defaultValue={applyReplication ? pattern?.endTime : undefined} name="endTime" type="time" required /></label>
-        <label className="font-semibold sm:col-span-2">Local<input className={inputClass} defaultValue={applyReplication ? pattern?.location ?? "" : undefined} name="location" placeholder="Ex.: Templo principal" /></label>
-        <label className="font-semibold sm:col-span-2">Observações<textarea className={`${inputClass} min-h-24 py-3`} defaultValue={applyReplication ? pattern?.notes ?? "" : undefined} name="notes" placeholder="Orientações para a equipe" /></label>
-      </section>
-
-      <section className="rounded-[1.75rem] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold">3. Equipe (aplicada a todos os dias marcados)</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {positions?.map((position) => <fieldset className="rounded-2xl border border-[#e1e7ef] p-4" key={position.id}>
-            <legend className="px-2 font-bold text-[var(--church-brand)]">{position.name}</legend>
-            <div className="mt-2 space-y-2">
-              {members?.map((item) => {
-                const profile = item.profiles as ProfileRelation;
-                const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
-                const key = assignmentKey(position.id, item.user_id);
-                return <label className="flex min-h-11 items-center gap-3 rounded-xl bg-[#f6f8fb] px-3 text-gray-900 dark:bg-[#273136] dark:text-white" key={item.user_id}>
-                  <input className="h-5 w-5 accent-[var(--church-brand)]" defaultChecked={preselectedAssignments.has(key)} name="selection" type="checkbox" value={key} />
-                  <span>{name ?? "Membro"}</span>
-                </label>;
-              })}
-            </div>
-          </fieldset>)}
-        </div>
-        {!positions?.length ? <p className="mt-2 text-sm text-amber-700">Cadastre uma função no setor antes de montar a escala.</p> : null}
-      </section>
+      <ServiceBlocksForm initialBlock={initialBlock} members={memberOptions} positions={positions ?? []} />
 
       <PendingSubmitButton className="min-h-14 w-full rounded-2xl bg-[var(--church-brand)] px-6 font-bold text-white" disabled={!positions?.length} pendingLabel="Criando escalas...">Criar e publicar todas as escalas</PendingSubmitButton>
     </form>
