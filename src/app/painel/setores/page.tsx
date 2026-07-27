@@ -33,7 +33,7 @@ export default async function DepartmentsPage({ searchParams }: PageProps) {
     <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {departments?.map((department) => <Link className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md" href={`/painel/setores/${department.id}`} key={department.id}>
         <h2 className="text-xl font-bold">{department.name}</h2>
-        <p className="mt-2 text-sm text-[#6b767d]">{viewer.role === "admin" ? "Consultar funções do setor" : "Gerenciar funções do seu setor"}</p>
+        <p className="mt-2 text-sm text-[#6b767d]">Gerenciar funções {viewer.role === "admin" ? "do setor" : "do seu setor"}</p>
       </Link>)}
     </section>
   </main>;

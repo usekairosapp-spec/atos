@@ -12,6 +12,7 @@ type PageProps = {
   params: Promise<{ departmentId: string }>;
   searchParams: Promise<{ erro?: string; sucesso?: string }>;
 };
+type ProfileRelation = { full_name: string } | { full_name: string }[] | null;
 
 export default async function DepartmentDetailPage({ params, searchParams }: PageProps) {
   const [{ departmentId }, message, viewer] = await Promise.all([params, searchParams, getViewerContext()]);
@@ -25,7 +26,7 @@ export default async function DepartmentDetailPage({ params, searchParams }: Pag
   if (!department) redirect("/painel/setores?erro=Setor não encontrado.");
   if (!viewer.currentChurch || department.church_id !== viewer.currentChurch.id) redirect("/painel/setores?erro=Setor não pertence à igreja selecionada.");
   if (viewer.role === "leader" && !viewer.departmentMemberships.some((item) => item.department_id === departmentId && item.role === "leader")) redirect("/painel?erro=Setor não atribuído a este líder.");
-  const canEdit = viewer.departmentMemberships.some((item) => item.department_id === departmentId && item.role === "leader");
+  const canEdit = viewer.isChurchAdmin || viewer.departmentMemberships.some((item) => item.department_id === departmentId && item.role === "leader");
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
@@ -42,7 +43,7 @@ export default async function DepartmentDetailPage({ params, searchParams }: Pag
         <p className="mt-1 text-sm text-[#6b767d]">Todos os membros inscritos neste setor</p>
         <div className="mt-4 divide-y divide-[#e8ecf1]">
           {members && members.length > 0 ? members.map((member) => {
-            const profile = member.profiles as any;
+            const profile = member.profiles as ProfileRelation;
             const name = Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name;
             return <article className="flex items-center justify-between py-3" key={member.user_id}>
               <div>
