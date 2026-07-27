@@ -68,7 +68,7 @@ export function ScheduleSelectableList({ schedules, canSelect }: { schedules: Sc
       })}
     </div>
 
-    {selectMode && selected.size > 0 ? <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-4xl px-4 sm:bottom-4">
+    {selectMode && selected.size > 0 ? <div className="fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-4xl px-4">
       <div className="rounded-2xl bg-[#11223a] p-4 text-white shadow-2xl">
         {confirming ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-semibold">{confirming === "excluir" ? `Excluir ${selected.size} ${selected.size === 1 ? "escala" : "escalas"}? Essa ação não pode ser desfeita.` : `Replicar ${selected.size} ${selected.size === 1 ? "escala" : "escalas"} para o mês seguinte?`}</p>
