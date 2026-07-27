@@ -9,9 +9,11 @@ import { DEFAULT_TIMEZONE, formatDate, formatTime } from "@/shared/lib/timezone"
 
 type PageProps = { searchParams: Promise<{ erro?: string; sucesso?: string; aba?: string; visao?: string }> };
 type AssignmentRow = {
+  id?: string;
   department_schedule_id: string;
   user_id: string;
   status: string;
+  position_id?: string | null;
   positions: { name: string } | { name: string }[] | null;
 };
 type MyAssignmentRpcRow = {
@@ -30,7 +32,7 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
   const canManageSchedules = Boolean(viewer?.isLeader || viewer?.isChurchAdmin);
   const [{ data: ownAssignmentRows }, { data: teamAssignmentRows }] = await Promise.all([
     viewer?.currentChurch ? supabase.rpc("get_my_schedule_assignments", { target_church_id: viewer.currentChurch.id }) : Promise.resolve({ data: [] }),
-    canManageSchedules && scheduleIds.length ? supabase.from("schedule_assignments").select("department_schedule_id, user_id, status, positions(name)").in("department_schedule_id", scheduleIds) : Promise.resolve({ data: [] }),
+    canManageSchedules && scheduleIds.length ? supabase.from("schedule_assignments").select("id, department_schedule_id, user_id, status, position_id, positions(name)").in("department_schedule_id", scheduleIds) : Promise.resolve({ data: [] }),
   ]);
   const ownAssignments: AssignmentRow[] = (ownAssignmentRows ?? []).map((item: MyAssignmentRpcRow) => ({ department_schedule_id: item.department_schedule_id, user_id: item.user_id, status: item.assignment_status, positions: { name: item.position_name } }));
   const teamAssignments: AssignmentRow[] = (teamAssignmentRows ?? []).map((item: AssignmentRow | MyAssignmentRpcRow) => {
@@ -81,6 +83,9 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
       const labelClass = label === "Confirmado" ? "bg-emerald-100 text-emerald-700" : label === "Troca solicitada" ? "bg-amber-100 text-amber-700" : "bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]";
       const date = new Date(info.startsAt);
       entry.assignments.push({
+        assignmentId: row.id ?? "",
+        scheduleId: row.department_schedule_id,
+        positionId: row.position_id ?? "",
         dateLabel: `${formatDate(date, tz, { day: "2-digit" })}/${formatDate(date, tz, { month: "2-digit" })}`,
         departmentName: info.departmentName,
         positionName: position?.name ?? "",
@@ -104,7 +109,7 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
     {leaderView ? <nav className="mt-7 grid grid-cols-3 rounded-2xl bg-white p-1 shadow-sm"><Link className={`rounded-xl px-2 py-3 text-center text-sm font-semibold ${view === "setor" ? "bg-[var(--church-brand)] text-white" : "text-[#6b767d]"}`} href="/painel/escalas">Escalas do setor</Link><Link className={`rounded-xl px-2 py-3 text-center text-sm font-semibold ${view === "pessoa" ? "bg-[var(--church-brand)] text-white" : "text-[#6b767d]"}`} href="/painel/escalas?visao=pessoa">Por pessoa</Link><Link className={`rounded-xl px-2 py-3 text-center text-sm font-semibold ${view === "minhas" ? "bg-[var(--church-brand)] text-white" : "text-[#6b767d]"}`} href="/painel/escalas?visao=minhas">Minhas escalas</Link></nav> : null}
     <nav className="mt-7 grid grid-cols-2 border-b border-[#d7dee7]"><Link className={`pb-4 text-center font-semibold ${tab === "proximas" ? "border-b-2 border-[var(--church-brand)] text-[var(--church-brand)]" : "text-[#717880]"}`} href={`/painel/escalas${viewQuery ? `?${viewQuery}` : ""}`}>Próximas</Link><Link className={`pb-4 text-center font-semibold ${tab === "historico" ? "border-b-2 border-[var(--church-brand)] text-[var(--church-brand)]" : "text-[#717880]"}`} href={`/painel/escalas?${viewQuery ? `${viewQuery}&` : ""}aba=historico`}>Histórico</Link></nav>
     {view === "pessoa" ? (
-      <div className="mt-6"><PersonScheduleBrowser emptyLabel={tab === "proximas" ? "Nenhuma escala agendada" : "Nenhuma escala no histórico"} people={people} /></div>
+      <div className="mt-6"><PersonScheduleBrowser canSwap emptyLabel={tab === "proximas" ? "Nenhuma escala agendada" : "Nenhuma escala no histórico"} people={people} /></div>
     ) : <div className="mt-6">
       {(() => {
         const cards: ScheduleCardData[] = visible.map((schedule) => {

@@ -274,3 +274,29 @@ export async function replicateSchedulesToNextMonth(formData: FormData) {
   revalidatePath("/painel/escalas");
   redirect(`/painel/escalas/lote/revisar/${batchId}`);
 }
+
+export async function getSwapCandidatesForLeader(assignmentId: string) {
+  const parsed = z.string().uuid().safeParse(assignmentId);
+  if (!parsed.success) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_department_swap_candidates_for_leader", { target_assignment_id: parsed.data });
+  if (error) return [];
+  return (data ?? []).map((item: { candidate_user_id: string; candidate_name: string; has_conflict: boolean; conflict_label: string | null }) => ({ userId: item.candidate_user_id, name: item.candidate_name, hasConflict: item.has_conflict, conflictLabel: item.conflict_label }));
+}
+
+export async function leaderSwapAssignment(formData: FormData) {
+  const parsed = z.object({ assignmentId: z.string().uuid(), scheduleId: z.string().uuid(), positionId: z.string().uuid(), newUserId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?visao=pessoa&erro=Troca inválida.");
+  const supabase = await createClient();
+  const { error: removeError } = await supabase.rpc("remove_schedule_assignment", { target_assignment_id: parsed.data.assignmentId });
+  if (removeError) redirect(`/painel/escalas?visao=pessoa&erro=${encodeURIComponent(removeError.message)}`);
+  const { error: addError } = await supabase.rpc("add_schedule_assignment", {
+    target_schedule_id: parsed.data.scheduleId,
+    target_position_id: parsed.data.positionId,
+    target_user_id: parsed.data.newUserId,
+  });
+  if (addError) redirect(`/painel/escalas?visao=pessoa&erro=${encodeURIComponent(addError.code === "23505" ? "Essa pessoa já está nessa função." : addError.message)}`);
+  revalidatePath("/painel/escalas");
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
+  redirect("/painel/escalas?visao=pessoa&sucesso=Troca realizada.");
+}
