@@ -20,6 +20,53 @@ function localDateTimeToIso(value: string) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+const batchScheduleSchema = z.object({
+  departmentId: z.string().uuid(),
+  title: z.string().trim().min(2, "Informe o nome do evento.").max(120),
+  dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).min(1, "Selecione pelo menos um dia no calendário."),
+  startTime: z.string().min(1, "Informe o início."),
+  endTime: z.string().min(1, "Informe o término."),
+  location: z.string().trim().max(160).optional().default(""),
+  notes: z.string().trim().max(1000).optional().default(""),
+  selections: z.array(z.object({ positionId: z.string().uuid(), userId: z.string().uuid() })).min(1, "Selecione pelo menos uma pessoa para a equipe."),
+});
+
+export async function createSchedulesBatch(formData: FormData) {
+  const rawSelections = formData.getAll("selection").map(String).map((value) => {
+    const [positionId, userId] = value.split("|");
+    return { positionId, userId };
+  });
+  const parsed = batchScheduleSchema.safeParse({
+    departmentId: formData.get("departmentId"),
+    title: formData.get("title"),
+    dates: formData.getAll("dates").map(String),
+    startTime: formData.get("startTime"),
+    endTime: formData.get("endTime"),
+    location: formData.get("location"),
+    notes: formData.get("notes"),
+    selections: rawSelections,
+  });
+  if (!parsed.success) redirect(`/painel/escalas/lote?erro=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Dados inválidos.")}`);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_department_schedules_batch", {
+    target_department_id: parsed.data.departmentId,
+    target_dates: parsed.data.dates,
+    schedule_title: parsed.data.title,
+    start_time: parsed.data.startTime,
+    end_time: parsed.data.endTime,
+    schedule_location: parsed.data.location,
+    schedule_notes: parsed.data.notes,
+    target_assignments: parsed.data.selections,
+  });
+  if (error) redirect(`/painel/escalas/lote?erro=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/painel/escalas");
+  revalidatePath("/painel", "layout");
+  const count = data?.length ?? parsed.data.dates.length;
+  redirect(`/painel/escalas?sucesso=${encodeURIComponent(`${count} ${count === 1 ? "escala criada e publicada" : "escalas criadas e publicadas"}.`)}`);
+}
+
 export async function createSchedule(formData: FormData) {
   const parsed = newScheduleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect(`/painel/escalas/nova?erro=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Dados inválidos.")}`);
