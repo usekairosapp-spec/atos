@@ -21,11 +21,11 @@ export function ConfirmAssignmentForm({ assignmentId, scheduleId, serviceDate, s
     <input type="hidden" name="serviceDate" value={serviceDate} />
 
     <fieldset className="grid gap-2">
-      <label className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 ${availability === "full" ? "border-[var(--church-brand)] bg-[var(--church-brand-soft)]" : "border-[#d7dee7]"}`}>
+      <label className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 ${availability === "full" ? "border-[var(--church-brand)] bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]" : "border-[#d7dee7]"}`}>
         <input checked={availability === "full"} className="h-4 w-4 accent-[var(--church-brand)]" name="availability" onChange={() => setAvailability("full")} type="radio" value="full" />
         Posso ficar o horário todo ({startTime} às {endTime})
       </label>
-      <label className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 ${availability === "partial" ? "border-[var(--church-brand)] bg-[var(--church-brand-soft)]" : "border-[#d7dee7]"}`}>
+      <label className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 ${availability === "partial" ? "border-[var(--church-brand)] bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]" : "border-[#d7dee7]"}`}>
         <input checked={availability === "partial"} className="h-4 w-4 accent-[var(--church-brand)]" name="availability" onChange={() => setAvailability("partial")} type="radio" value="partial" />
         Só posso ficar até um horário específico
       </label>
