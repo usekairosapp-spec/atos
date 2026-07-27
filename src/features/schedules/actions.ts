@@ -15,6 +15,15 @@ function withVoltarLote(url: string, formData: FormData) {
   return url;
 }
 
+// Se a acao foi disparada a partir da tela de revisao do lote (marcando ali
+// mesmo, sem entrar na escala), revalida essa tela tambem.
+function revalidateVoltarLote(formData: FormData) {
+  const voltarLote = formData.get("voltarLote");
+  if (typeof voltarLote === "string" && voltarLote) {
+    revalidatePath(`/painel/escalas/lote/revisar/${voltarLote}`);
+  }
+}
+
 const newScheduleSchema = z.object({
   departmentId: z.string().uuid(),
   title: z.string().trim().min(2, "Informe o nome do evento.").max(120),
@@ -129,6 +138,7 @@ export async function addScheduleAssignment(formData: FormData) {
   if (error) redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.code === "23505" ? "Essa pessoa já está nessa função." : error.message)}`, formData));
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
   revalidatePath("/painel/escalas");
+  revalidateVoltarLote(formData);
 }
 
 export async function publishSchedule(formData: FormData) {
@@ -215,6 +225,7 @@ export async function removeScheduleAssignment(formData: FormData) {
   const { error } = await supabase.rpc("remove_schedule_assignment", { target_assignment_id: parsed.data.assignmentId });
   if (error) redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`, formData));
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`); revalidatePath("/painel/escalas");
+  revalidateVoltarLote(formData);
 }
 
 export async function deleteSchedule(formData: FormData) {
