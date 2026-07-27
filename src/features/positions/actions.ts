@@ -37,3 +37,18 @@ export async function togglePosition(formData: FormData) {
   if (error) redirect(`/painel/setores/${parsed.data.departmentId}?erro=Não foi possível alterar a função.`);
   revalidatePath(`/painel/setores/${parsed.data.departmentId}`);
 }
+
+export async function deletePosition(formData: FormData) {
+  const parsed = z.object({ positionId: z.string().uuid(), departmentId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/setores?erro=Função inválida.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("positions").delete().eq("id", parsed.data.positionId).eq("department_id", parsed.data.departmentId);
+  if (error) {
+    const message = error.code === "23503"
+      ? "Essa função já foi usada em escalas e não pode ser excluída. Arquive-a em vez disso."
+      : "Não foi possível excluir a função.";
+    redirect(`/painel/setores/${parsed.data.departmentId}?erro=${encodeURIComponent(message)}`);
+  }
+  revalidatePath(`/painel/setores/${parsed.data.departmentId}`);
+  redirect(`/painel/setores/${parsed.data.departmentId}?sucesso=Função excluída.`);
+}
