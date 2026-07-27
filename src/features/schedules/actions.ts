@@ -195,6 +195,16 @@ export async function requestAssignmentSwap(formData: FormData) {
   redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Solicitação de troca enviada ao líder.`);
 }
 
+export async function cancelAssignmentSwap(formData: FormData) {
+  const parsed = z.object({ requestId: z.string().uuid(), scheduleId: z.string().uuid() }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/painel/escalas?erro=Solicitação inválida.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_assignment_swap", { target_request_id: parsed.data.requestId });
+  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
+  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Solicitação de troca cancelada.`);
+}
+
 export async function respondToPeerSwap(formData: FormData) {
   const parsed = z.object({ requestId: z.string().uuid(), scheduleId: z.string().uuid(), decision: z.enum(["accept", "reject"]) }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect("/painel/escalas?erro=Resposta inválida.");
