@@ -192,7 +192,9 @@ export async function requestAssignmentSwap(formData: FormData) {
   });
   if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.code === "23505" ? "Já existe uma solicitação de troca pendente." : error.message)}`);
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
-  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Solicitação de troca enviada ao líder.`);
+  const { data: suggestedProfile } = await supabase.from("profiles").select("full_name").eq("id", parsed.data.suggestedUserId).maybeSingle();
+  const suggestedName = suggestedProfile?.full_name ?? "a pessoa escolhida";
+  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=${encodeURIComponent(`Solicitação de troca enviada para ${suggestedName}.`)}`);
 }
 
 export async function cancelAssignmentSwap(formData: FormData) {
