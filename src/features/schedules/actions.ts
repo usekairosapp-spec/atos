@@ -5,6 +5,16 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
+// Preserva o contexto de "voltar pra revisao do lote" (?voltarLote=) atraves
+// de redirects, senao a pessoa perde o caminho de volta ao ajustar um dia.
+function withVoltarLote(url: string, formData: FormData) {
+  const voltarLote = formData.get("voltarLote");
+  if (typeof voltarLote === "string" && voltarLote) {
+    return `${url}${url.includes("?") ? "&" : "?"}voltarLote=${encodeURIComponent(voltarLote)}`;
+  }
+  return url;
+}
+
 const newScheduleSchema = z.object({
   departmentId: z.string().uuid(),
   title: z.string().trim().min(2, "Informe o nome do evento.").max(120),
@@ -135,10 +145,10 @@ export async function addScheduleAssignments(formData: FormData) {
     target_schedule_id: scheduleId.data,
     selections: parsedSelections.flatMap((selection) => selection.success ? [{ positionId: selection.data.positionId, userId: selection.data.userId }] : []),
   });
-  if (error) redirect(`/painel/escalas/${scheduleId.data}?erro=${encodeURIComponent(error.code === "23505" ? "Uma das pessoas já está nessa função." : error.message)}`);
+  if (error) redirect(withVoltarLote(`/painel/escalas/${scheduleId.data}?erro=${encodeURIComponent(error.code === "23505" ? "Uma das pessoas já está nessa função." : error.message)}`, formData));
   revalidatePath(`/painel/escalas/${scheduleId.data}`);
   revalidatePath("/painel/escalas");
-  redirect(`/painel/escalas/${scheduleId.data}?sucesso=Equipe atualizada.`);
+  redirect(withVoltarLote(`/painel/escalas/${scheduleId.data}?sucesso=Equipe atualizada.`, formData));
 }
 
 export async function publishSchedule(formData: FormData) {
@@ -213,9 +223,9 @@ export async function updateSchedule(formData: FormData) {
   if (!startsAt || !endsAt) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=Data ou horário inválido.`);
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_department_schedule", { target_schedule_id: parsed.data.scheduleId, schedule_title: parsed.data.title, schedule_starts_at: startsAt, schedule_ends_at: endsAt, schedule_location: parsed.data.location, schedule_notes: parsed.data.notes });
-  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
+  if (error) redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`, formData));
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`); revalidatePath("/painel/escalas");
-  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Escala atualizada.`);
+  redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Escala atualizada.`, formData));
 }
 
 export async function removeScheduleAssignment(formData: FormData) {
@@ -223,9 +233,9 @@ export async function removeScheduleAssignment(formData: FormData) {
   if (!parsed.success) redirect("/painel/escalas?erro=Participante inválido.");
   const supabase = await createClient();
   const { error } = await supabase.rpc("remove_schedule_assignment", { target_assignment_id: parsed.data.assignmentId });
-  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`);
+  if (error) redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`, formData));
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`); revalidatePath("/painel/escalas");
-  redirect(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Pessoa removida da escala.`);
+  redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Pessoa removida da escala.`, formData));
 }
 
 export async function deleteSchedule(formData: FormData) {
