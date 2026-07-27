@@ -67,7 +67,7 @@ export async function updateChurchBranding(formData: FormData) {
 
 export async function updateChurchBrandingFromCentral(formData: FormData) {
   const viewer = await getViewerContext();
-  const parsed = z.object({ churchId: z.string().uuid(), primaryColor: colorSchema, secondaryColor: colorSchema }).safeParse(Object.fromEntries(formData));
+  const parsed = z.object({ churchId: z.string().uuid(), primaryColor: colorSchema, secondaryColor: colorSchema, name: z.string().trim().min(2, "O nome da igreja deve ter pelo menos 2 caracteres.").max(120) }).safeParse(Object.fromEntries(formData));
   if (!viewer?.isPlatformAdmin || !parsed.success) redirect("/central?erro=Personalização inválida.");
   const supabase = await createClient();
 
@@ -91,7 +91,7 @@ export async function updateChurchBrandingFromCentral(formData: FormData) {
     if (uploadError) redirect(`/central/igrejas/${parsed.data.churchId}?erro=${encodeURIComponent(`Não foi possível salvar a capa: ${uploadError.message}`)}`);
   }
 
-  const { error } = await supabase.rpc("update_church_branding", { target_church_id: parsed.data.churchId, target_primary_color: parsed.data.primaryColor, target_logo_path: logoPath, target_cover_path: coverPath, target_secondary_color: parsed.data.secondaryColor });
+  const { error } = await supabase.rpc("update_church_branding", { target_church_id: parsed.data.churchId, target_primary_color: parsed.data.primaryColor, target_logo_path: logoPath, target_cover_path: coverPath, target_secondary_color: parsed.data.secondaryColor, target_name: parsed.data.name });
   if (error) redirect(`/central/igrejas/${parsed.data.churchId}?erro=${encodeURIComponent(error.message)}`);
   revalidatePath("/central");
   revalidatePath("/painel", "layout");
