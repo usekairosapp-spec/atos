@@ -126,29 +126,9 @@ export async function addScheduleAssignment(formData: FormData) {
     target_position_id: parsed.data.positionId,
     target_user_id: parsed.data.userId,
   });
-  if (error) redirect(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.code === "23505" ? "Essa pessoa já está nessa função." : error.message)}`);
+  if (error) redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.code === "23505" ? "Essa pessoa já está nessa função." : error.message)}`, formData));
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`);
   revalidatePath("/painel/escalas");
-}
-
-export async function addScheduleAssignments(formData: FormData) {
-  const scheduleId = z.string().uuid().safeParse(formData.get("scheduleId"));
-  const selections = formData.getAll("selection").map(String);
-  if (!scheduleId.success || !selections.length) redirect(`/painel/escalas/${scheduleId.success ? scheduleId.data : ""}?erro=Selecione pelo menos uma pessoa.`);
-  const parsedSelections = selections.map((value) => {
-    const [positionId, userId] = value.split("|");
-    return z.object({ positionId: z.string().uuid(), userId: z.string().uuid() }).safeParse({ positionId, userId });
-  });
-  if (parsedSelections.some((item) => !item.success)) redirect(`/painel/escalas/${scheduleId.data}?erro=Uma das seleções é inválida.`);
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("add_schedule_assignments", {
-    target_schedule_id: scheduleId.data,
-    selections: parsedSelections.flatMap((selection) => selection.success ? [{ positionId: selection.data.positionId, userId: selection.data.userId }] : []),
-  });
-  if (error) redirect(withVoltarLote(`/painel/escalas/${scheduleId.data}?erro=${encodeURIComponent(error.code === "23505" ? "Uma das pessoas já está nessa função." : error.message)}`, formData));
-  revalidatePath(`/painel/escalas/${scheduleId.data}`);
-  revalidatePath("/painel/escalas");
-  redirect(withVoltarLote(`/painel/escalas/${scheduleId.data}?sucesso=Equipe atualizada.`, formData));
 }
 
 export async function publishSchedule(formData: FormData) {
@@ -235,7 +215,6 @@ export async function removeScheduleAssignment(formData: FormData) {
   const { error } = await supabase.rpc("remove_schedule_assignment", { target_assignment_id: parsed.data.assignmentId });
   if (error) redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?erro=${encodeURIComponent(error.message)}`, formData));
   revalidatePath(`/painel/escalas/${parsed.data.scheduleId}`); revalidatePath("/painel/escalas");
-  redirect(withVoltarLote(`/painel/escalas/${parsed.data.scheduleId}?sucesso=Pessoa removida da escala.`, formData));
 }
 
 export async function deleteSchedule(formData: FormData) {
