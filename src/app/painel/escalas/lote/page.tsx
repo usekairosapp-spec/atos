@@ -83,8 +83,11 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
     const s = Array.isArray(service) ? service[0] : service;
     return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(s!.starts_at));
   }));
+  // "Hoje" no fuso de Brasilia: a sugestao de replicacao nao deve incluir dias
+  // do mes atual que ja passaram, senao a escala nasce direto no historico.
+  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(today);
 
-  const suggestedDates = pattern ? datesForWeekdayInMonth(currentYear, currentMonth, pattern.weekday).filter((d) => !alreadyScheduledDates.has(d)) : [];
+  const suggestedDates = pattern ? datesForWeekdayInMonth(currentYear, currentMonth, pattern.weekday).filter((d) => !alreadyScheduledDates.has(d) && d >= todayIso) : [];
   const showSuggestion = pattern !== null && suggestedDates.length > 0 && message.replicate !== "1";
   const applyReplication = pattern !== null && suggestedDates.length > 0 && message.replicate === "1";
 
