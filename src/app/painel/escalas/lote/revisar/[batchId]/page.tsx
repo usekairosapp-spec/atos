@@ -32,9 +32,7 @@ export default async function ReviewBatchPage({ params, searchParams }: PageProp
   const [{ data: team }, { data: positions }, { data: members }] = await Promise.all([
     supabase.rpc("get_batch_team", { target_batch_id: batchId }),
     supabase.from("positions").select("id, name").eq("department_id", departmentId).eq("active", true).order("name"),
-    viewer.isChurchAdmin
-      ? supabase.from("church_memberships").select("user_id, profiles!church_memberships_user_id_fkey(full_name)").eq("church_id", firstDepartment.church_id).eq("status", "active")
-      : supabase.from("department_memberships").select("user_id, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", departmentId).eq("status", "active"),
+    supabase.from("department_memberships").select("user_id, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", departmentId).eq("status", "active"),
   ]);
 
   const assignmentsBySchedule = new Map<string, { id: string; userId: string; positionName: string }[]>();

@@ -57,9 +57,7 @@ export default async function BatchSchedulePage({ searchParams }: PageProps) {
 
   const [{ data: positions }, { data: members }, { data: previousSchedules }, { data: currentMonthSchedules }] = await Promise.all([
     supabase.from("positions").select("id, name").eq("department_id", departmentId).eq("active", true).order("name"),
-    viewer.isChurchAdmin
-      ? supabase.from("church_memberships").select("user_id, profiles!church_memberships_user_id_fkey(full_name)").eq("church_id", viewer.currentChurch.id).eq("status", "active")
-      : supabase.from("department_memberships").select("user_id, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", departmentId).eq("status", "active"),
+    supabase.from("department_memberships").select("user_id, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", departmentId).eq("status", "active"),
     supabase.from("department_schedules")
       .select("id, services!inner(title, starts_at, ends_at, location, notes), schedule_assignments(position_id, user_id)")
       .eq("department_id", departmentId).eq("status", "published")

@@ -40,9 +40,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
 
   const [{ data: positions }, { data: members }, { data: assignmentRows }, { data: swapRequests }, { data: ownAssignmentRows }, { data: receivedSwapRequests }, { data: ownSwapRequestRows }] = await Promise.all([
     canManage ? supabase.from("positions").select("id, name").eq("department_id", schedule.department_id).eq("active", true).order("name") : Promise.resolve({ data: [] }),
-    canManage
-      ? supabase.from("church_memberships").select("user_id, profiles!church_memberships_user_id_fkey(full_name)").eq("church_id", department.church_id).eq("status", "active")
-      : supabase.from("department_memberships").select("user_id, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", schedule.department_id).eq("status", "active"),
+    canManage ? supabase.from("department_memberships").select("user_id, profiles!department_memberships_user_id_fkey(full_name)").eq("department_id", schedule.department_id).eq("status", "active") : Promise.resolve({ data: [] }),
     supabase.rpc("get_schedule_team", { target_schedule_id: scheduleId }),
     canManage ? supabase.from("swap_requests").select("id, reason, suggested_user_id, profiles!swap_requests_requested_by_fkey(full_name), suggested:profiles!swap_requests_suggested_user_id_fkey(full_name), schedule_assignments!inner(department_schedule_id)").eq("status", "pending").eq("schedule_assignments.department_schedule_id", scheduleId) : Promise.resolve({ data: [] }),
     supabase.rpc("get_my_schedule_assignment", { target_schedule_id: scheduleId }),
