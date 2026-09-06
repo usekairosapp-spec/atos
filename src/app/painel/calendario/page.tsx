@@ -76,6 +76,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   }
   const assignments = [...groupedAssignments.values()];
   const monthAssignments = assignments.filter((assignment) => localDateKey(assignment.service_starts_at, tz).startsWith(`${currentMonth}-`));
+  const personalMonthCount = monthAssignments.filter((assignment) => assignment.owner_user_id === viewer?.user.id).length;
   const assignmentsByDay = new Map<string, CalendarEntry[]>();
   for (const assignment of monthAssignments) {
     const key = localDateKey(assignment.service_starts_at, tz);
@@ -102,7 +103,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   while (cells.length % 7) cells.push(null);
 
   return <main className="mx-auto max-w-4xl px-4 py-7 sm:px-8">
-    <div className="flex items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[.15em] text-[var(--church-brand)]">Agenda dos meus setores</p><h1 className="mt-1 text-3xl font-bold">Calendário</h1></div><span className="rounded-full bg-[var(--church-brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--church-brand)]">{monthAssignments.length} {monthAssignments.length === 1 ? "escala" : "escalas"}</span></div>
+    <div className="flex items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[.15em] text-[var(--church-brand)]">Agenda dos meus setores</p><h1 className="mt-1 text-3xl font-bold">Calendário</h1></div><span className="rounded-full bg-[var(--church-brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--church-brand)]">{personalMonthCount} {personalMonthCount === 1 ? "escala" : "escalas"}</span></div>
     {sectorError ? <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-red-700">Não foi possível carregar as escalas dos seus setores. Tente novamente.</p> : null}
     {query.erro ? <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-700">{query.erro}</p> : null}
     {query.sucesso ? <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-700">{query.sucesso}</p> : null}
@@ -112,13 +113,13 @@ export default async function CalendarPage({ searchParams }: PageProps) {
       <div className="grid grid-cols-7 gap-y-2 text-center">{cells.map((day, index) => {
         if (!day) return <span className="min-h-12" key={`empty-${index}`} />;
         const dateKey = `${currentMonth}-${String(day).padStart(2, "0")}`;
-        const count = assignmentsByDay.get(dateKey)?.length ?? 0;
+        const count = assignmentsByDay.get(dateKey)?.filter((assignment) => assignment.owner_user_id === viewer?.user.id).length ?? 0;
         const selected = dateKey === selectedDay;
         const accessibleDate = formatDate(new Date(`${dateKey}T12:00:00Z`), tz, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
         const countLabel = count === 1 ? "1 escala" : `${count} escalas`;
         return <Link scroll={false} aria-haspopup="dialog" aria-current={selected ? "date" : undefined} aria-label={`${accessibleDate}, ${countLabel}${dateKey === todayKey ? ", hoje" : ""}`} className="grid min-h-12 place-items-center" href={`/painel/calendario?mes=${currentMonth}&dia=${dateKey}`} key={dateKey}><span className={`relative grid h-11 w-11 place-items-center rounded-full font-semibold transition ${selected ? "bg-[var(--church-brand-dark)] text-white shadow-md" : count ? "bg-[var(--church-brand-soft)] text-[var(--church-brand)]" : dateKey === todayKey ? "bg-emerald-100 text-emerald-800" : "hover:bg-[#f1f4f8] dark:hover:bg-[#273136]"} ${dateKey === todayKey && !selected ? "ring-2 ring-emerald-500 ring-offset-2" : ""}`}>{day}{count > 1 ? <small aria-hidden="true" className={`absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] ${selected ? "bg-white text-[var(--church-brand-dark)]" : "bg-[var(--church-brand)] text-white"}`}>{count}</small> : null}</span></Link>;
       })}</div>
-      <div className="mt-5 flex items-center justify-center gap-2 text-sm text-[#6b767d]"><i className="h-3 w-3 rounded-full bg-[var(--church-brand-light)]" />Tem escala</div>
+      <div className="mt-5 flex items-center justify-center gap-2 text-sm text-[#6b767d]"><i className="h-3 w-3 rounded-full bg-[var(--church-brand-light)]" />Você está escalado</div>
     </section>
 
     {selectedDay ? <CalendarDayDialog key={selectedDay} title={formatDate(new Date(`${selectedDay}T12:00:00Z`), tz, { weekday: "long", day: "2-digit", month: "long" })} closeHref={`/painel/calendario?mes=${currentMonth}`}>

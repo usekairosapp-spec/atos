@@ -113,3 +113,11 @@ Solicitação: permitir que membros consultem a equipe do dia para avaliar troca
 Arquivos: `supabase/migrations/20260906020000_member_sector_calendar.sql`, `src/app/painel/calendario/page.tsx`, `src/features/calendar/calendar-hardening.test.ts`, `docs/stories/STAB-001.md`.
 
 Validação desta extensão: 23 testes, lint (zero erros, um aviso preexistente), typecheck e build passaram. Build executado fora do sandbox após bloqueio de porta pelo Turbopack. Migration aplicada ao Supabase vinculado; lint SQL remoto sem erros. Sem teste ponta a ponta autenticado; CodeRabbit indisponível.
+
+
+### Contadores pessoais no calendário
+
+- [x] Contar somente escalas da própria pessoa nos indicadores diários e no total mensal, preservando consulta às equipes dos setores.
+- Arquivos: `src/app/painel/calendario/page.tsx`, `docs/stories/STAB-001.md`.
+
+Validação dos contadores: 23 testes, typecheck e build passaram; lint sem erros e com aviso preexistente. Escalas agrupadas por setor/evento, sem duplicar a contagem por função.
