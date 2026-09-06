@@ -32,3 +32,25 @@ describe("Google Agenda e calendário pessoal", () => {
     expect(page).toContain('name="returnTo"');
   });
 });
+
+
+describe("equipes dos setores para membros", () => {
+  const sql = readFileSync(join(process.cwd(), "supabase/migrations/20260906020000_member_sector_calendar.sql"), "utf8");
+  it("exige igreja e setor ativos e escala publicada nas duas consultas", () => {
+    for (const rpc of sql.split("create or replace function public.").slice(1)) {
+      expect(rpc).toContain("cm.user_id = (select auth.uid())");
+      expect(rpc).toContain("cm.status = 'active'");
+      expect(rpc).toContain("dm.status = 'active'");
+      expect(rpc).toContain("ds.status = 'published'");
+      expect(rpc).toContain("c.status = 'active'");
+    }
+    expect(sql).toContain("cm.church_id = target_church_id");
+    expect(sql).toContain("dm.department_id = ds.department_id");
+  });
+  it("protege links Google de outras pessoas e ações pessoais", () => {
+    expect(sql).toContain("case when sa.user_id = (select auth.uid()) then gce.html_link else null end");
+    expect(page).toContain('const isOwn = assignment.owner_user_id === viewer?.user.id');
+    expect(page).toContain('{isOwn ? assignment.assignment_status === "confirmed"');
+    expect(page).toContain('supabase.rpc("get_department_calendar_month"');
+  });
+});

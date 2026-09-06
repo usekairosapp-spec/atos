@@ -55,15 +55,20 @@ export default async function CalendarPage({ searchParams }: PageProps) {
     ? await supabase.rpc("get_my_calendar_assignments", { target_church_id: viewer.currentChurch.id })
     : { data: null };
   const normalizedData = data ?? (fallbackData ?? []).map((item: Omit<CalendarAssignment, "owner_user_id">) => ({ ...item, owner_user_id: viewer?.user.id ?? "" }));
-  const personalAssignments = (normalizedData as CalendarAssignment[]).filter((item) => item.owner_user_id === viewer?.user.id);
+  const { data: sectorData, error: sectorError } = viewer?.currentChurch
+    ? await supabase.rpc("get_department_calendar_month", { target_church_id: viewer.currentChurch.id, target_month: `${currentMonth}-01` })
+    : { data: [], error: null };
+  const visibleAssignments = [...new Map([...(sectorData ?? []) as CalendarAssignment[], ...normalizedData as CalendarAssignment[]].map((item) => [item.assignment_id, item])).values()];
   const groupedAssignments = new Map<string, CalendarEntry>();
-  for (const assignment of personalAssignments) {
+  for (const assignment of visibleAssignments) {
     const existing = groupedAssignments.get(assignment.schedule_id);
     if (!existing) {
       groupedAssignments.set(assignment.schedule_id, { ...assignment, assignment_ids: [assignment.assignment_id] });
       continue;
     }
-    const useCurrent = assignment.assignment_status === "confirmed" && existing.assignment_status !== "confirmed";
+    const isOwn = assignment.owner_user_id === viewer?.user.id;
+    const existingIsOwn = existing.owner_user_id === viewer?.user.id;
+    const useCurrent = (isOwn && !existingIsOwn) || (isOwn === existingIsOwn && assignment.assignment_status === "confirmed" && existing.assignment_status !== "confirmed");
     groupedAssignments.set(assignment.schedule_id, {
       ...(useCurrent ? assignment : existing),
       assignment_ids: [...existing.assignment_ids, assignment.assignment_id],
@@ -97,7 +102,8 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   while (cells.length % 7) cells.push(null);
 
   return <main className="mx-auto max-w-4xl px-4 py-7 sm:px-8">
-    <div className="flex items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[.15em] text-[var(--church-brand)]">Minha agenda</p><h1 className="mt-1 text-3xl font-bold">Calendário</h1></div><span className="rounded-full bg-[var(--church-brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--church-brand)]">{monthAssignments.length} {monthAssignments.length === 1 ? "escala" : "escalas"}</span></div>
+    <div className="flex items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[.15em] text-[var(--church-brand)]">Agenda dos meus setores</p><h1 className="mt-1 text-3xl font-bold">Calendário</h1></div><span className="rounded-full bg-[var(--church-brand-soft)] px-3 py-2 text-sm font-semibold text-[var(--church-brand)]">{monthAssignments.length} {monthAssignments.length === 1 ? "escala" : "escalas"}</span></div>
+    {sectorError ? <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-red-700">Não foi possível carregar as escalas dos seus setores. Tente novamente.</p> : null}
     {query.erro ? <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-700">{query.erro}</p> : null}
     {query.sucesso ? <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-emerald-700">{query.sucesso}</p> : null}
     <section className="mt-7 rounded-[2rem] bg-white p-4 shadow-sm sm:p-7">
@@ -122,16 +128,17 @@ export default async function CalendarPage({ searchParams }: PageProps) {
         const end = new Date(assignment.service_ends_at);
         const googleLink = assignment.google_html_link;
         const team = teams.get(assignment.schedule_id);
+        const isOwn = assignment.owner_user_id === viewer?.user.id;
         const status = assignment.assignment_status === "confirmed" ? "Confirmado" : assignment.assignment_status === "replacement_requested" ? "Troca solicitada" : "Pendente";
         const returnTo = `/painel/calendario?mes=${currentMonth}&dia=${selectedDay}`;
         return <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={assignment.assignment_id}>
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-[var(--church-brand)]">{assignment.department_name}</p><h3 className="mt-1 text-xl font-bold">{assignment.service_title}</h3><p className="mt-1 text-[#50585f]">{assignment.position_name}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${status === "Confirmado" ? "bg-emerald-100 text-emerald-700" : status === "Troca solicitada" ? "bg-amber-100 text-amber-700" : "bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]"}`}>{status}</span></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-[var(--church-brand)]">{assignment.department_name}</p><h3 className="mt-1 text-xl font-bold">{assignment.service_title}</h3>{isOwn ? <p className="mt-1 text-[#50585f]">Sua função: {assignment.position_name}</p> : null}</div>{isOwn ? <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status === "Confirmado" ? "bg-emerald-100 text-emerald-700" : status === "Troca solicitada" ? "bg-amber-100 text-amber-700" : "bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]"}`}>{status}</span> : null}</div>
           <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#6b767d]"><span className="flex items-center gap-2"><Clock3 size={16} />{formatTime(start, tz, { hour: "2-digit", minute: "2-digit" })}–{formatTime(end, tz, { hour: "2-digit", minute: "2-digit" })}</span>{assignment.service_location ? <span className="flex items-center gap-2"><MapPin size={16} />{assignment.service_location}</span> : null}</div>
           <section className="mt-5 border-t border-[#e2e7ee] pt-4" aria-label={`Equipe de ${assignment.department_name}`}>
             <h4 className="font-bold">Pessoas escaladas</h4>
             {team?.error ? <p role="alert" className="mt-3 text-sm text-red-700">Não foi possível carregar a equipe. Feche e toque no dia para tentar novamente.</p> : team?.members.length ? <ul className="mt-2 divide-y divide-[#e2e7ee]">{team.members.map(([userId, member]) => <li className="flex items-center gap-3 py-3" key={userId}><span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--church-brand-soft)] font-bold text-[var(--church-brand)]">{member.name.charAt(0).toLocaleUpperCase("pt-BR")}</span><div className="min-w-0"><p className="break-words font-semibold">{member.name}</p><p className="text-sm text-[#6b767d]">{member.positions.join(" · ")}</p></div></li>)}</ul> : <p className="mt-3 text-sm text-[#6b767d]">Nenhuma pessoa escalada.</p>}
           </section>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--church-brand)] font-semibold text-[var(--church-brand)]" href={`/painel/escalas/${assignment.schedule_id}?visao=minhas`}>Ver escala completa</Link>{assignment.assignment_status === "confirmed" ? googleLink ? <div className="grid grid-cols-2 gap-2"><a className="flex min-h-12 items-center justify-center gap-1 rounded-xl border border-emerald-300 text-sm font-semibold text-emerald-700" href={googleLink} rel="noreferrer" target="_blank">Abrir <ExternalLink size={15} /></a><form action={addAssignmentToGoogleCalendar}><input name="assignmentId" type="hidden" value={assignment.assignment_id} /><input name="scheduleId" type="hidden" value={assignment.schedule_id} /><input name="returnTo" type="hidden" value={returnTo} /><PendingSubmitButton className="flex min-h-12 w-full items-center justify-center gap-1 rounded-xl bg-emerald-600 px-2 text-sm font-semibold text-white" pendingLabel="Sincronizando...">Sincronizar</PendingSubmitButton></form></div> : <form action={addAssignmentToGoogleCalendar}><input name="assignmentId" type="hidden" value={assignment.assignment_id} /><input name="scheduleId" type="hidden" value={assignment.schedule_id} /><input name="returnTo" type="hidden" value={returnTo} /><PendingSubmitButton className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 font-semibold text-white" pendingLabel="Adicionando..."><CalendarPlus size={18} />Adicionar ao Google</PendingSubmitButton></form> : <span className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#f1f4f8] text-sm font-semibold text-[#6b767d] dark:bg-[#273136] dark:text-[#9aa5b1]"><CalendarCheck2 size={18} />Confirme para sincronizar</span>}</div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">{isOwn ? <Link className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--church-brand)] font-semibold text-[var(--church-brand)]" href={`/painel/escalas/${assignment.schedule_id}?visao=minhas`}>Ver escala completa</Link> : null}{isOwn ? assignment.assignment_status === "confirmed" ? googleLink ? <div className="grid grid-cols-2 gap-2"><a className="flex min-h-12 items-center justify-center gap-1 rounded-xl border border-emerald-300 text-sm font-semibold text-emerald-700" href={googleLink} rel="noreferrer" target="_blank">Abrir <ExternalLink size={15} /></a><form action={addAssignmentToGoogleCalendar}><input name="assignmentId" type="hidden" value={assignment.assignment_id} /><input name="scheduleId" type="hidden" value={assignment.schedule_id} /><input name="returnTo" type="hidden" value={returnTo} /><PendingSubmitButton className="flex min-h-12 w-full items-center justify-center gap-1 rounded-xl bg-emerald-600 px-2 text-sm font-semibold text-white" pendingLabel="Sincronizando...">Sincronizar</PendingSubmitButton></form></div> : <form action={addAssignmentToGoogleCalendar}><input name="assignmentId" type="hidden" value={assignment.assignment_id} /><input name="scheduleId" type="hidden" value={assignment.schedule_id} /><input name="returnTo" type="hidden" value={returnTo} /><PendingSubmitButton className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 font-semibold text-white" pendingLabel="Adicionando..."><CalendarPlus size={18} />Adicionar ao Google</PendingSubmitButton></form> : <span className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#f1f4f8] text-sm font-semibold text-[#6b767d] dark:bg-[#273136] dark:text-[#9aa5b1]"><CalendarCheck2 size={18} />Confirme para sincronizar</span> : null}</div>
         </article>;
       })}</div>
       {!selectedAssignments.length ? <p className="py-10 text-center text-[#6b767d]">Nenhuma escala para este dia.</p> : null}
