@@ -36,7 +36,8 @@ export default async function MembersPage({ searchParams }: PageProps) {
 
   const memberDepartments = new Map<string, { name: string; role: string }[]>();
   allDepartmentMemberships?.forEach((dm) => {
-    const dept = (dm.departments as any);
+    const relation = dm.departments as { id: string; name: string } | { id: string; name: string }[] | null;
+    const dept = Array.isArray(relation) ? relation[0] : relation;
     if (dept && dept.name) {
       const key = dm.user_id;
       if (!memberDepartments.has(key)) {
