@@ -121,3 +121,5 @@ Validação desta extensão: 23 testes, lint (zero erros, um aviso preexistente)
 - Arquivos: `src/app/painel/calendario/page.tsx`, `docs/stories/STAB-001.md`.
 
 Validação dos contadores: 23 testes, typecheck e build passaram; lint sem erros e com aviso preexistente. Escalas agrupadas por setor/evento, sem duplicar a contagem por função.
+
+- [x] Exibir indicador numérico também quando a pessoa tem exatamente uma escala no dia (`count > 0`). Arquivos: `src/app/painel/calendario/page.tsx`, `docs/stories/STAB-001.md`.
