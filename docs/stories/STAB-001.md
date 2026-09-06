@@ -76,3 +76,27 @@ Como administradora de uma igreja, líder ou membro, quero que os fluxos crític
 - `src/app/painel/notificacoes/[notificationId]/abrir/route.ts`
 - `src/shared/components/pending-submit-button.tsx`
 - `src/shared/components/confirm-submit-button.tsx`
+
+
+## Dev Agent Record — calendário com equipe do dia
+
+Solicitação: opção 2 da prévia aprovada; tocar no dia abre uma janela com os participantes e suas funções nas escalas visíveis no calendário pessoal.
+
+- [x] Abrir janela inferior no celular e centralizada no desktop, com fechamento por botão, fundo e Escape.
+- [x] Mostrar equipes por culto/setor, agregando funções da mesma pessoa e tratando dia vazio/falha de consulta.
+- [x] Preservar acesso às escalas, sincronização Google e permissões RPC existentes.
+- [x] Executar testes, lint, typecheck e build.
+
+### File List desta alteração
+
+- `src/app/painel/calendario/page.tsx`
+- `src/features/calendar/components/calendar-day-dialog.tsx`
+- `src/features/calendar/components/calendar-day-dialog.test.tsx`
+- `docs/stories/STAB-001.md`
+
+### Validação
+
+- 21 testes passaram, incluindo 4 testes de interação da janela (abertura, fechamento por botão/fundo/Escape, restauração de rolagem).
+- Build e typecheck passaram; lint sem erros, com aviso preexistente em escalas/page.tsx.
+- Reutiliza `get_schedule_team` para as escalas do calendário pessoal; mantém autorização no banco. Sem migration.
+- CodeRabbit indisponível neste ambiente; não foi executado teste com sessão autenticada real no navegador.

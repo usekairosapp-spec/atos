@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarDayDialog } from "@/features/calendar/components/calendar-day-dialog";
 import { CalendarCheck2, CalendarPlus, ChevronLeft, ChevronRight, Clock3, ExternalLink, MapPin } from "lucide-react";
 import { getViewerContext } from "@/features/auth/viewer";
 import { addAssignmentToGoogleCalendar } from "@/features/calendar/actions";
@@ -75,10 +76,23 @@ export default async function CalendarPage({ searchParams }: PageProps) {
     const key = localDateKey(assignment.service_starts_at, tz);
     assignmentsByDay.set(key, [...(assignmentsByDay.get(key) ?? []), assignment]);
   }
-  const requestedDay = query.dia && assignmentsByDay.has(query.dia) ? query.dia : null;
+  const requestedDay = query.dia && Array.from({ length: last.getDate() }, (_, index) => `${currentMonth}-${String(index + 1).padStart(2, "0")}`).includes(query.dia) ? query.dia : null;
   const todayKey = localDateKey(today, tz);
   const selectedDay = requestedDay;
   const selectedAssignments = selectedDay ? assignmentsByDay.get(selectedDay) ?? [] : [];
+  const teamResults = await Promise.all(selectedAssignments.map(async (assignment) => {
+    const { data: team, error: teamError } = await supabase.rpc("get_schedule_team", { target_schedule_id: assignment.schedule_id });
+    const members = new Map<string, { name: string; positions: string[] }>();
+    for (const member of (team ?? []) as { user_id: string; member_name: string; position_name: string; assignment_status: string }[]) {
+      if (!["pending", "confirmed", "replacement_requested"].includes(member.assignment_status)) continue;
+      const existing = members.get(member.user_id);
+      if (existing) {
+        if (!existing.positions.includes(member.position_name)) existing.positions.push(member.position_name);
+      } else members.set(member.user_id, { name: member.member_name, positions: [member.position_name] });
+    }
+    return [assignment.schedule_id, { error: Boolean(teamError), members: [...members.entries()].sort(([, a], [, b]) => a.name.localeCompare(b.name, "pt-BR")) }] as const;
+  }));
+  const teams = new Map(teamResults);
   const cells: Array<number | null> = [...Array(first.getDay()).fill(null), ...Array.from({ length: last.getDate() }, (_, index) => index + 1)];
   while (cells.length % 7) cells.push(null);
 
@@ -96,26 +110,32 @@ export default async function CalendarPage({ searchParams }: PageProps) {
         const selected = dateKey === selectedDay;
         const accessibleDate = formatDate(new Date(`${dateKey}T12:00:00Z`), tz, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
         const countLabel = count === 1 ? "1 escala" : `${count} escalas`;
-        return <Link aria-current={selected ? "date" : undefined} aria-label={`${accessibleDate}, ${countLabel}${dateKey === todayKey ? ", hoje" : ""}`} className="grid min-h-12 place-items-center" href={`/painel/calendario?mes=${currentMonth}&dia=${dateKey}`} key={dateKey}><span className={`relative grid h-11 w-11 place-items-center rounded-full font-semibold transition ${selected ? "bg-[var(--church-brand-dark)] text-white shadow-md" : count ? "bg-[var(--church-brand-soft)] text-[var(--church-brand)]" : dateKey === todayKey ? "bg-emerald-100 text-emerald-800" : "hover:bg-[#f1f4f8] dark:hover:bg-[#273136]"} ${dateKey === todayKey && !selected ? "ring-2 ring-emerald-500 ring-offset-2" : ""}`}>{day}{count > 1 ? <small aria-hidden="true" className={`absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] ${selected ? "bg-white text-[var(--church-brand-dark)]" : "bg-[var(--church-brand)] text-white"}`}>{count}</small> : null}</span></Link>;
+        return <Link scroll={false} aria-haspopup="dialog" aria-current={selected ? "date" : undefined} aria-label={`${accessibleDate}, ${countLabel}${dateKey === todayKey ? ", hoje" : ""}`} className="grid min-h-12 place-items-center" href={`/painel/calendario?mes=${currentMonth}&dia=${dateKey}`} key={dateKey}><span className={`relative grid h-11 w-11 place-items-center rounded-full font-semibold transition ${selected ? "bg-[var(--church-brand-dark)] text-white shadow-md" : count ? "bg-[var(--church-brand-soft)] text-[var(--church-brand)]" : dateKey === todayKey ? "bg-emerald-100 text-emerald-800" : "hover:bg-[#f1f4f8] dark:hover:bg-[#273136]"} ${dateKey === todayKey && !selected ? "ring-2 ring-emerald-500 ring-offset-2" : ""}`}>{day}{count > 1 ? <small aria-hidden="true" className={`absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] ${selected ? "bg-white text-[var(--church-brand-dark)]" : "bg-[var(--church-brand)] text-white"}`}>{count}</small> : null}</span></Link>;
       })}</div>
       <div className="mt-5 flex items-center justify-center gap-2 text-sm text-[#6b767d]"><i className="h-3 w-3 rounded-full bg-[var(--church-brand-light)]" />Tem escala</div>
     </section>
 
-    <section className="mt-7">
-      <h2 className="text-xl font-bold">{selectedDay ? formatDate(new Date(`${selectedDay}T12:00:00Z`), tz, { weekday: "long", day: "2-digit", month: "long" }) : "Agenda do mês"}</h2>
+    {selectedDay ? <CalendarDayDialog key={selectedDay} title={formatDate(new Date(`${selectedDay}T12:00:00Z`), tz, { weekday: "long", day: "2-digit", month: "long" })} closeHref={`/painel/calendario?mes=${currentMonth}`}>
+    <section>
       <div className="mt-4 space-y-4">{selectedAssignments.map((assignment) => {
         const start = new Date(assignment.service_starts_at);
         const end = new Date(assignment.service_ends_at);
         const googleLink = assignment.google_html_link;
+        const team = teams.get(assignment.schedule_id);
         const status = assignment.assignment_status === "confirmed" ? "Confirmado" : assignment.assignment_status === "replacement_requested" ? "Troca solicitada" : "Pendente";
         const returnTo = `/painel/calendario?mes=${currentMonth}&dia=${selectedDay}`;
         return <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={assignment.assignment_id}>
           <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-[var(--church-brand)]">{assignment.department_name}</p><h3 className="mt-1 text-xl font-bold">{assignment.service_title}</h3><p className="mt-1 text-[#50585f]">{assignment.position_name}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${status === "Confirmado" ? "bg-emerald-100 text-emerald-700" : status === "Troca solicitada" ? "bg-amber-100 text-amber-700" : "bg-[var(--church-brand-soft)] text-[var(--church-brand-on-soft)]"}`}>{status}</span></div>
           <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#6b767d]"><span className="flex items-center gap-2"><Clock3 size={16} />{formatTime(start, tz, { hour: "2-digit", minute: "2-digit" })}–{formatTime(end, tz, { hour: "2-digit", minute: "2-digit" })}</span>{assignment.service_location ? <span className="flex items-center gap-2"><MapPin size={16} />{assignment.service_location}</span> : null}</div>
+          <section className="mt-5 border-t border-[#e2e7ee] pt-4" aria-label={`Equipe de ${assignment.department_name}`}>
+            <h4 className="font-bold">Pessoas escaladas</h4>
+            {team?.error ? <p role="alert" className="mt-3 text-sm text-red-700">Não foi possível carregar a equipe. Feche e toque no dia para tentar novamente.</p> : team?.members.length ? <ul className="mt-2 divide-y divide-[#e2e7ee]">{team.members.map(([userId, member]) => <li className="flex items-center gap-3 py-3" key={userId}><span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--church-brand-soft)] font-bold text-[var(--church-brand)]">{member.name.charAt(0).toLocaleUpperCase("pt-BR")}</span><div className="min-w-0"><p className="break-words font-semibold">{member.name}</p><p className="text-sm text-[#6b767d]">{member.positions.join(" · ")}</p></div></li>)}</ul> : <p className="mt-3 text-sm text-[#6b767d]">Nenhuma pessoa escalada.</p>}
+          </section>
           <div className="mt-5 grid gap-3 sm:grid-cols-2"><Link className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--church-brand)] font-semibold text-[var(--church-brand)]" href={`/painel/escalas/${assignment.schedule_id}?visao=minhas`}>Ver escala completa</Link>{assignment.assignment_status === "confirmed" ? googleLink ? <div className="grid grid-cols-2 gap-2"><a className="flex min-h-12 items-center justify-center gap-1 rounded-xl border border-emerald-300 text-sm font-semibold text-emerald-700" href={googleLink} rel="noreferrer" target="_blank">Abrir <ExternalLink size={15} /></a><form action={addAssignmentToGoogleCalendar}><input name="assignmentId" type="hidden" value={assignment.assignment_id} /><input name="scheduleId" type="hidden" value={assignment.schedule_id} /><input name="returnTo" type="hidden" value={returnTo} /><PendingSubmitButton className="flex min-h-12 w-full items-center justify-center gap-1 rounded-xl bg-emerald-600 px-2 text-sm font-semibold text-white" pendingLabel="Sincronizando...">Sincronizar</PendingSubmitButton></form></div> : <form action={addAssignmentToGoogleCalendar}><input name="assignmentId" type="hidden" value={assignment.assignment_id} /><input name="scheduleId" type="hidden" value={assignment.schedule_id} /><input name="returnTo" type="hidden" value={returnTo} /><PendingSubmitButton className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 font-semibold text-white" pendingLabel="Adicionando..."><CalendarPlus size={18} />Adicionar ao Google</PendingSubmitButton></form> : <span className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#f1f4f8] text-sm font-semibold text-[#6b767d] dark:bg-[#273136] dark:text-[#9aa5b1]"><CalendarCheck2 size={18} />Confirme para sincronizar</span>}</div>
         </article>;
       })}</div>
-      {!selectedAssignments.length ? <div className="mt-4 rounded-[1.75rem] border border-dashed border-[#c6d0dc] bg-white p-8 text-center"><CalendarCheck2 className="mx-auto text-[var(--church-brand)]" size={36} /><p className="mt-3 font-semibold">{monthAssignments.length ? "Selecione um dia com escala." : "Nenhuma escala neste mês."}</p><p className="mt-1 text-sm text-[#6b767d]">{monthAssignments.length ? "Os detalhes aparecerão aqui." : "Quando você for escalado, o compromisso aparecerá aqui."}</p></div> : null}
+      {!selectedAssignments.length ? <p className="py-10 text-center text-[#6b767d]">Nenhuma escala para este dia.</p> : null}
     </section>
+    </CalendarDayDialog> : <p className="mt-7 text-center text-[#6b767d]">Toque em um dia para ver quem está escalado.</p>}
   </main>;
 }
